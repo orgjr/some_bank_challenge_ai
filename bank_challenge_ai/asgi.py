@@ -1,5 +1,5 @@
 """
-ASGI config for picpay_challenge_ai project.
+ASGI config for bank_challenge_ai project.
 
 It exposes the ASGI callable as a module-level variable named ``application``.
 
@@ -11,6 +11,6 @@ import os
 
 from django.core.asgi import get_asgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'picpay_challenge_ai.settings')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "bank_challenge_ai.settings")
 
 application = get_asgi_application()

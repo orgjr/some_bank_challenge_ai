@@ -14,7 +14,7 @@ class AccountModel(models.Model):
     uuid = models.UUIDField(
         default=uuid.uuid4, unique=True, editable=False, primary_key=True
     )
-    client = models.ForeignKey(
+    client = models.OneToOneField(
         UserModel, related_name="account", on_delete=models.CASCADE
     )
     agency = models.CharField(max_length=4, default=1002)
