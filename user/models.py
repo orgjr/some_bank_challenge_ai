@@ -13,8 +13,8 @@ class UserModel(models.Model):
     )
 
     def clean(self):
-        if self.client.client_type is not ClientModel.ClientType.USER:
-            raise ValidationError("Client must be USER type.")
+        if self.client.client_type != "user":
+            raise ValidationError("Client must be 'user' type.")
 
     def save(self, *args, **kwargs):
         self.full_clean()

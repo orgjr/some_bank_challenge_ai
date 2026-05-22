@@ -3,38 +3,35 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from client.models import ClientModel
-from store.models import StoreModel
+from user.models import UserModel
 
 
-class StoreSerializer(serializers.Serializer):
+class UserSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField()
-    cnpj = serializers.CharField()
-    razao_social = serializers.CharField()
-    nome_fantasia = serializers.CharField()
+    cpf = serializers.CharField()
+    name = serializers.CharField()
 
     def create(self, validated_data):
 
         email = validated_data["email"]
         password = validated_data["password"]
-        cnpj = validated_data["cnpj"]
-        razao_social = validated_data["razao_social"]
-        nome_fantasia = validated_data["nome_fantasia"]
+        cpf = validated_data["cpf"]
+        name = validated_data["name"]
 
         client = ClientModel.objects.create_user(
-            email=email, password=password, client_type="store"
+            email=email, password=password, client_type="user"
         )
 
         try:
-            store = StoreModel.objects.create(
-                cnpj=cnpj,
-                razao_social=razao_social,
-                nome_fantasia=nome_fantasia,
+            user = UserModel.objects.create(
+                cpf=cpf,
+                name=name,
                 client=client,
             )
-            store.save()
+            user.save()
         except DjangoValidationError as e:
             client.delete()
             raise ValidationError(e)
 
-        return store
+        return user

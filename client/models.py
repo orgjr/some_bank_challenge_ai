@@ -36,4 +36,9 @@ class ClientModel(AbstractBaseUser, PermissionsMixin):
         return self.email
 
     def get_client_name(self):
-        return self.user.name if self.user else self.store.razao_social
+        if hasattr(self, "user"):
+            return self.user.name
+        if hasattr(self, "store"):
+            return self.store.razao_social
+
+        return None

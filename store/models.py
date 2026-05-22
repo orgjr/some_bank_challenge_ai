@@ -18,8 +18,6 @@ class StoreModel(models.Model):
 
     def clean(self):
         required_fields = [
-            self.email,
-            self.password,
             self.cnpj,
             self.razao_social,
             self.nome_fantasia,
@@ -30,8 +28,8 @@ class StoreModel(models.Model):
                     "Store accounts must have email, password, cnpj, razao_social and nome_fantasia."
                 )
 
-        if self.client.client_type is not ClientModel.ClientType.STORE:
-            raise ValidationError("Client must be STORE type.")
+        if self.client.client_type != "store":
+            raise ValidationError("Client must be 'store' type.")
 
     def save(self, *args, **kwargs):
         self.full_clean()

@@ -11,7 +11,8 @@ from core.serializers import AuthSerializer
 # Create your views here.
 class IndexApiView(APIView):
     def get(self, request):
-        print(request.COOKIES.get("csrftoken"))
+        print(request.user.account.number)
+        print(request.user.email)
         return Response({"handshake": "Hello, from my bank_challenge app!"})
 
 

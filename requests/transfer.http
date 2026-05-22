@@ -1,0 +1,8 @@
+POST http://127.0.0.1:8000/bank/transaction/transfer/ HTTP/1.1
+Content-Type: application/json
+X-CSRFToken: XQvfMvOrYWpAQjgDK4QD0ovjkQI3jPpR
+
+{
+    "value": "10.36",
+    "payee": "2134848"
+}
