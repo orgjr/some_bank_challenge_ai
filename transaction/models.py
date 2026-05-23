@@ -71,11 +71,11 @@ class TransactionModel(models.Model):
 
     def rollback_due_to_inconsistency(self):
 
-        if self.debit is False:
+        if self.debit is True:
             self.payer.balance += self.value
             self.payer.save()
 
-        if self.credit is False:
+        if self.credit is True:
             self.payee.balance -= self.value
             self.payee.save()
 
