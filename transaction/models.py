@@ -22,20 +22,17 @@ class TransactionModel(models.Model):
 
     value = models.DecimalField(decimal_places=2, max_digits=8)
 
-    debit = models.BooleanField()
-    credit = models.BooleanField()
+    refund = models.BooleanField(default=False)
 
     operation_date = models.DateTimeField(auto_now_add=True)
 
-    def save(self, *args, **kwargs):
-        try:
-            if self.payee:
-                self.transfer()
-            super().save(*args, **kwargs)
-        except ValidationError:
-            self.rollback_due_to_inconsistency()
+    def __str__(self):
+        if self.payee:
+            return f"{self.payer} * {self.payee} / {self.transaction_type}"
+        else:
+            return f"{self.payer} / {self.transaction_type}"
 
-    def validate_allowed_transfer(self):
+    def allowed_transfer(self):
         ### challenge business rule
         if self.payer.client.client_type == "store":
             raise ValidationError("Stores cant realize a transfer transaction")
@@ -54,31 +51,3 @@ class TransactionModel(models.Model):
         if type(self.payee) is not AccountModel:
             raise ValidationError("Invalid beneficiary account.")
         ###
-
-    ### challenge business rule
-    def transfer(self):
-        self.validate_allowed_transfer()
-
-        self.payer.balance -= self.value
-        self.payer.save()
-        self.debit = True
-
-        self.payee.balance += self.value
-        self.payee.save()
-        self.credit = True
-
-        return f"Payer: {self.payer}, Payee: {self.payee}, Value{self.value}"
-
-    def rollback_due_to_inconsistency(self):
-
-        if self.debit is True:
-            self.payer.balance += self.value
-            self.payer.save()
-
-        if self.credit is True:
-            self.payee.balance -= self.value
-            self.payee.save()
-
-        return f"Reversed {self.transaction_type} transaction."
-
-    ###

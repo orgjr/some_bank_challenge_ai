@@ -20,15 +20,3 @@ class ClientManager(BaseUserManager):
         user.save(using=self._db)
 
         return user
-
-    def create_superuser(self, email, password=None, client_type=None, **extra_fields):
-        extra_fields.setdefault("is_staff", True)
-        extra_fields.setdefault("is_superuser", True)
-
-        if extra_fields.get("is_staff") is not True:
-            raise ValueError("Superuser must be a staff (is_staff == True).")
-
-        if extra_fields.get("is_superuser") is not True:
-            raise ValueError("Superuser must be a superuser (is_superuser == True).")
-
-        return self.create_user(email, password, client_type, **extra_fields)

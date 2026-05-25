@@ -1,7 +1,6 @@
 import random
 import uuid
 
-from django.core.exceptions import ValidationError
 from django.db import models
 
 from client.models import ClientModel
@@ -27,13 +26,9 @@ class AccountModel(models.Model):
     balance = models.DecimalField(max_digits=8, decimal_places=2)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    def clean(self):
-        if self.balance < 0:
-            raise ValidationError("Balance can not be negative.")
-
     def save(self, *args, **kwargs):
         if not self.number:
             self.number = random.randrange(pow(10, 6), pow(10, 7))
             self.balance = random.randrange(2000, 10000)
-        self.full_clean()
+
         super().save(*args, **kwargs)

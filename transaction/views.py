@@ -9,6 +9,8 @@ from rest_framework.viewsets import ViewSet
 
 import requests
 from transaction.serializers import TransactionTransferSerializer
+from transaction.services.rollback_service import RollbackService
+from transaction.services.transfer_service import TransferService
 
 # Create your views here.
 
@@ -16,6 +18,18 @@ from transaction.serializers import TransactionTransferSerializer
 class TransactionViewSet(ViewSet):
     @action(detail=False, methods=["POST"], permission_classes=[IsAuthenticated])
     def transfer(self, request):
+        serializer = TransactionTransferSerializer(
+            data=request.data, context={"request": request}
+        )
+        serializer.is_valid(raise_exception=True)
+        transaction = serializer.save()
+
+        data = {
+            "value": transaction["value"],
+            "payer": request.user.account,
+            "payee": transaction["payee"],
+        }
+        TransferService.transfer(data)
 
         ### challenge business rule
         try:
@@ -24,27 +38,13 @@ class TransactionViewSet(ViewSet):
             response.raise_for_status()
         except HTTPError as e:
             logging.error({"unauthorized": payload})
+            RollbackService.rollback_due_to_inconsistency(data)
             raise PermissionDenied(e)
         ###
 
-        serializer = TransactionTransferSerializer(
-            data=request.data, context={"request": request}
-        )
-        serializer.is_valid(raise_exception=True)
-        transfer = serializer.save()
-        payer_name = transfer.payer.client.get_client_name()
-        payee_name = transfer.payee.client.get_client_name()
-
         ### challenge business rule
         try:
-            response = requests.post(
-                "https://util.devi.tools/api/v1/notify",
-                data={
-                    "value": {transfer.value},
-                    "payer": {payer_name},
-                    "payee": {payee_name},
-                },
-            )
+            response = requests.post("https://util.devi.tools/api/v1/notify", payload)
             response.raise_for_status()
         except HTTPError:
             logging.error("notification error")
@@ -53,9 +53,9 @@ class TransactionViewSet(ViewSet):
         return Response(
             {
                 "transfer": {
-                    "value": {transfer.value},
-                    "payer": {payer_name},
-                    "payee": {payee_name},
-                },
+                    "value": data["value"],
+                    "payer": request.user.user.name,
+                    "payee": data["payee"].client.get_client_name(),
+                }
             }
         )

@@ -1,6 +1,6 @@
 # Bank Challenge AI
 
-API RESTful de uma carteira bancaria inspirada no desafio PicPay Simplificado. O projeto implementa cadastro de usuarios comuns e lojistas, abertura de conta, autenticacao por sessao e fluxo de transferencia com validacoes de regra de negocio, autorizador externo e tentativa de notificacao ao recebedor.
+API RESTful de uma carteira bancaria inspirada no desafio de um banco famoso que não quer ser identificado. O projeto implementa cadastro de usuarios comuns e lojistas, abertura de conta, autenticacao por sessao e fluxo de transferencia com validacoes de regra de negocio, autorizador externo e tentativa de notificacao ao recebedor.
 
 Esta implementacao nao replica o contrato original de forma literal em todos os pontos, porque o projeto foi pensado para evoluir alem do desafio. Ainda assim, as regras centrais do desafio foram consideradas e estao refletidas no dominio atual.
 
@@ -29,7 +29,7 @@ Esta implementacao nao replica o contrato original de forma literal em todos os 
 - Apos a transferencia, a API tenta enviar notificacao pelo mock externo:
   `POST https://util.devi.tools/api/v1/notify`
 - Falha no envio de notificacao e registrada em log e nao desfaz a transferencia ja autorizada.
-- O modelo de transacao possui tentativa de reversao em caso de inconsistencia durante a movimentacao.
+- A tratativa de reversão e feita por servico que mantem o registro da transferencia recusada e cria um novo registro de estorno com uma flag true.
 
 ## Modelo de dominio
 
@@ -47,7 +47,7 @@ Campos principais:
 
 Representa uma pessoa fisica.
 
-Campos principais:
+Campos:
 
 - `name`
 - `cpf`: unico.
@@ -57,7 +57,7 @@ Campos principais:
 
 Representa um lojista.
 
-Campos principais:
+Campos:
 
 - `cnpj`: unico.
 - `razao_social`: unica.
@@ -68,25 +68,27 @@ Campos principais:
 
 Representa a carteira/conta usada nas transferencias.
 
-Campos principais:
+Campos:
 
+- `uuid`: identificador único da conta.
+- `client`: relacionamento 1:1 com `ClientModel`.
 - `agency`: agencia da conta.
 - `number`: numero da conta usado como identificador de destino nas transferencias.
 - `account_type`: conta corrente ou poupanca.
 - `balance`: saldo da conta.
-- `client`: relacionamento 1:1 com `ClientModel`.
+- `created_at`: data de criação da conta
 
 ### Transaction
 
 Representa uma transferencia entre duas contas.
 
-Campos principais:
+Campos:
 
 - `payer`: conta pagadora.
 - `payee`: conta recebedora.
+- `transaction_type`: tipo de transação, atualmente suporte apenas à transferências.
 - `value`: valor transferido.
-- `debit`: indica se houve debito do pagador.
-- `credit`: indica se houve credito do recebedor.
+- `refund`: default False, True caso seja uma operação de estorno.
 - `operation_date`: data da operacao.
 
 ## Base URL
@@ -232,8 +234,8 @@ Resposta:
 Observacoes:
 
 - A conta e vinculada ao usuario autenticado.
-- O numero da conta e gerado automaticamente.
-- O saldo inicial tambem e gerado automaticamente no ambiente atual.
+- O numero da conta possui 7 dígitos e e gerado automaticamente.
+- O saldo inicial tambem e gerado automaticamente no ambiente atual, valor entre 2000 e 10000.
 - O modelo impede saldo negativo.
 
 ### Transferir dinheiro
@@ -279,15 +281,21 @@ Resposta:
 
 Fluxo executado:
 
-1. A API consulta o autorizador externo.
+1. A API recebe a requisição do usuário.
 2. O payload da requisicao e validado.
 3. A conta pagadora e obtida a partir do usuario autenticado.
 4. A conta recebedora e buscada pelo numero informado em `payee`.
-5. A regra impede transferencia feita por lojista.
-6. A regra valida saldo suficiente.
-7. O saldo e debitado do pagador.
-8. O saldo e creditado no recebedor.
-9. A transacao e registrada.
+5. A transacao é validada no servico de transferencias pelo metodo allowed_transfer:
+   - loja não pode realizar transações;
+   - transferências não podem ser concluídas se o valor transferido for maior que o saldo;
+   - transferências precisam de um beneficiário;
+   - nao e possivel transferencia para a mesma conta;
+   - a transferencia precisa ser para uma conta registrada no app;
+   - modelo de usuarios garante que uma conta user so pode ser criada se o client for do tipo 'user' e store apenas para client tipo 'store';
+6. O saldo e debitado do pagador.
+7. O saldo e creditado no recebedor.
+8. A transacao e registrada.
+9. Se a transacao for cancelada ou recusada pelo servico validador é registrada uma nova transacao com uma operacao inversa para reembolso dos valores.
 10. A API tenta notificar o recebedor via servico externo.
 
 Possiveis erros de negocio:
@@ -302,10 +310,11 @@ Possiveis erros de negocio:
 ## Observacoes tecnicas
 
 - O projeto usa `ViewSet` e actions do Django REST Framework.
-- A transferencia esta concentrada no modelo `TransactionModel`, que executa as validacoes e a movimentacao de saldo.
-- O autorizador externo e chamado antes da criacao da transacao.
+- A transferencia e feita pelo servico `TransferService` desacoplado do modelo `TransactionModel`, que executa as validacoes e a movimentacao de saldo.
+- O autorizador externo e chamado apos a criacao da transacao.
+- Se a transacao nao for autorizada o reembolso e feito pelo servico `RollbackService` que faz uma operacao inversa, estornando ao pagador e debitando do beneficiario.
 - A notificacao externa e chamada depois da transferencia; falhas sao registradas, mas nao impedem a resposta de sucesso.
-- Como evolucao tecnica, a regra de transferencia pode ser movida para uma service layer dedicada, deixando models e views mais enxutos.
+- As operacoes de transferencia e rollback sao atomicas, com protecao contra concorrencia, garantindo que as transacoes sejam feitas no banco de forma segura.
 
 ## Como executar localmente
 
@@ -349,8 +358,8 @@ http://127.0.0.1:8000/bank/
 
 ### Upgrades tecnicos planejados
 
-- Criar uma service layer para centralizar o caso de uso de transferencia, autorizacao, notificacao e rollback.
-- Usar `transaction.atomic()` e bloqueio de linhas quando houver banco relacional adequado para concorrencia.
+- ~~Criar uma service layer para centralizar o caso de uso de transferencia, autorizacao, notificacao e rollback.~~
+- ~~Usar `transaction.atomic()` e bloqueio de linhas quando houver banco relacional adequado para concorrencia.~~
 - Conteinerizar a aplicacao com Docker e Docker Compose.
 - Separar configuracoes por ambiente: desenvolvimento, teste e producao.
 - Adicionar testes automatizados de unidade e integracao para as regras de negocio.

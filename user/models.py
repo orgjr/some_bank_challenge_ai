@@ -12,10 +12,13 @@ class UserModel(models.Model):
         ClientModel, related_name="user", on_delete=models.CASCADE
     )
 
-    def clean(self):
-        if self.client.client_type != "user":
-            raise ValidationError("Client must be 'user' type.")
+    def __str__(self):
+        return self.name
 
     def save(self, *args, **kwargs):
         self.full_clean()
         super().save(*args, **kwargs)
+
+    def clean(self):
+        if self.client.client_type != "user":
+            raise ValidationError("Client must be 'user' type.")

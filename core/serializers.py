@@ -15,5 +15,4 @@ class AuthSerializer(Serializer):
             raise ValidationError("invalid credentials.")
 
         data["user"] = user
-        print(data)
         return data

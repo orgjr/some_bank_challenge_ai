@@ -16,21 +16,10 @@ class StoreModel(models.Model):
     def __str__(self):
         return self.razao_social
 
-    def clean(self):
-        required_fields = [
-            self.cnpj,
-            self.razao_social,
-            self.nome_fantasia,
-        ]
-        for required in required_fields:
-            if not required:
-                raise ValidationError(
-                    "Store accounts must have email, password, cnpj, razao_social and nome_fantasia."
-                )
-
-        if self.client.client_type != "store":
-            raise ValidationError("Client must be 'store' type.")
-
     def save(self, *args, **kwargs):
         self.full_clean()
         super().save(*args, **kwargs)
+
+    def clean(self):
+        if self.client.client_type != "store":
+            raise ValidationError("Client must be 'store' type.")
