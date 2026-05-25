@@ -29,7 +29,7 @@ Esta implementacao nao replica o contrato original de forma literal em todos os 
 - Apos a transferencia, a API tenta enviar notificacao pelo mock externo:
   `POST https://util.devi.tools/api/v1/notify`
 - Falha no envio de notificacao e registrada em log e nao desfaz a transferencia ja autorizada.
-- A tratativa de reversão e feita por servico que mantem o registro da transferencia recusada e cria um novo registro de estorno com uma flag true.
+- A tratativa de reversão e feita por servico que mantem o registro da transferencia recusada e cria um novo registro de estorno com uma flag `refund true`.
 
 ## Modelo de dominio
 
