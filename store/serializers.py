@@ -14,26 +14,22 @@ class StoreSerializer(serializers.Serializer):
     nome_fantasia = serializers.CharField()
 
     def create(self, validated_data):
-
-        email = validated_data["email"]
-        password = validated_data["password"]
-        cnpj = validated_data["cnpj"]
-        razao_social = validated_data["razao_social"]
-        nome_fantasia = validated_data["nome_fantasia"]
-
-        client = ClientModel.objects.create_user(
-            email=email, password=password, client_type="store"
-        )
-
+        client = ClientModel()
         try:
+            client = ClientModel.objects.create_user(
+                email=validated_data["email"],
+                password=validated_data["password"],
+                client_type="store",
+            )
+
             store = StoreModel.objects.create(
-                cnpj=cnpj,
-                razao_social=razao_social,
-                nome_fantasia=nome_fantasia,
+                cnpj=validated_data["cnpj"],
+                razao_social=validated_data["razao_social"],
+                nome_fantasia=validated_data["nome_fantasia"],
                 client=client,
             )
             store.save()
-        except DjangoValidationError as e:
+        except (DjangoValidationError, ClientModel.DoesNotExist) as e:
             client.delete()
             raise ValidationError(e)
 

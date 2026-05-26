@@ -316,6 +316,33 @@ Possiveis erros de negocio:
 - A notificacao externa e chamada depois da transferencia; falhas sao registradas, mas nao impedem a resposta de sucesso.
 - As operacoes de transferencia e rollback sao atomicas, com protecao contra concorrencia, garantindo que as transacoes sejam feitas no banco de forma segura.
 
+## Testes automatizados
+
+Os testes foram organizados nos arquivos `tests.py` de cada app, mantendo cada regra perto do contexto responsavel por ela. A suite cobre testes unitarios de models, serializers, manager e services, alem de testes de API com `APITestCase` para validar as interacoes reais do usuario com os endpoints.
+
+Para executar:
+
+```bash
+DEV_PROJECT_KEY=test .venv/bin/python manage.py test
+```
+
+Casos implementados por app:
+
+- `client`: valida criacao de cliente, obrigatoriedade de e-mail e senha, força da senha, tipos permitidos (`user` e `store`), normalizacao de e-mail, hash de senha e retorno do nome relacionado ao perfil de usuario ou lojista.
+- `user`: valida criacao de usuario via serializer, e-mail invalido, campos obrigatorios no endpoint, unicidade de CPF, obrigatoriedade de `client_type = "user"` e remocao do `ClientModel` quando a criacao do perfil falha.
+- `store`: valida criacao de lojista via serializer, e-mail invalido, campos obrigatorios no endpoint, unicidade de CNPJ e razao social, obrigatoriedade de `client_type = "store"` e remocao do `ClientModel` quando a criacao do perfil falha.
+- `account`: valida criacao de conta autenticada, bloqueio para usuario nao autenticado, geracao de numero de conta e saldo inicial, agencia padrao e regra de apenas uma conta por cliente.
+- `core`: valida health check, login com credenciais validas, rejeicao de credenciais invalidas, logout autenticado e bloqueio de logout sem autenticacao.
+- `transaction`: valida payload de transferencia, valor nao numerico, conta recebedora invalida ou inexistente, campos obrigatorios, movimentacao de saldo, criacao de transacao, bloqueio de lojista como pagador, saldo insuficiente, transferencia sem beneficiario, transferencia para a propria conta, rollback com flag de estorno e fluxo de API com autorizador/notificador externo simulados por mock.
+
+Tipos de teste usados:
+
+- Testes unitarios de dominio: validam regras em models e manager.
+- Testes unitarios de serializers: validam payloads e erros de entrada.
+- Testes unitarios de services: validam transferencia, persistencia, saldo e rollback sem depender da camada HTTP.
+- Testes de API: validam endpoints, autenticacao, respostas HTTP e fluxo do usuario.
+- Testes com mock de servicos externos: simulam autorizador e notificacao para evitar dependencia de rede e tornar a suite deterministica.
+
 ## Como executar localmente
 
 Ative o ambiente virtual e defina a chave de desenvolvimento:
@@ -362,7 +389,7 @@ http://127.0.0.1:8000/bank/
 - ~~Usar `transaction.atomic()` e bloqueio de linhas quando houver banco relacional adequado para concorrencia.~~
 - Conteinerizar a aplicacao com Docker e Docker Compose.
 - Separar configuracoes por ambiente: desenvolvimento, teste e producao.
-- Adicionar testes automatizados de unidade e integracao para as regras de negocio.
+- ~~Adicionar testes automatizados de unidade e integracao para as regras de negocio.~~
 - Criar documentacao OpenAPI/Swagger.
 - Adicionar CI para lint, testes e migracoes.
 - Evoluir notificacoes para processamento assicrono.

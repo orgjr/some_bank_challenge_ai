@@ -1,4 +1,5 @@
 from django.contrib.auth.base_user import BaseUserManager
+from django.contrib.auth.password_validation import validate_password
 
 
 class ClientManager(BaseUserManager):
@@ -16,6 +17,7 @@ class ClientManager(BaseUserManager):
         email = self.normalize_email(email)
 
         user = self.model(email=email, client_type=client_type, **extra_fields)
+        validate_password(password)
         user.set_password(password)
         user.save(using=self._db)
 

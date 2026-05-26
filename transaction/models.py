@@ -35,7 +35,7 @@ class TransactionModel(models.Model):
     def allowed_transfer(self):
         ### challenge business rule
         if self.payer.client.client_type == "store":
-            raise ValidationError("Stores cant realize a transfer transaction")
+            raise ValidationError("Stores can not make transfer transactions")
 
         if self.value > self.payer.balance:
             raise ValidationError("Insuficient founds.")

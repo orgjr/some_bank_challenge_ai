@@ -13,24 +13,22 @@ class UserSerializer(serializers.Serializer):
     name = serializers.CharField()
 
     def create(self, validated_data):
-
-        email = validated_data["email"]
-        password = validated_data["password"]
-        cpf = validated_data["cpf"]
-        name = validated_data["name"]
-
-        client = ClientModel.objects.create_user(
-            email=email, password=password, client_type="user"
-        )
+        client = ClientModel()
 
         try:
+            client = ClientModel.objects.create_user(
+                email=validated_data["email"],
+                password=validated_data["password"],
+                client_type="user",
+            )
+
             user = UserModel.objects.create(
-                cpf=cpf,
-                name=name,
+                cpf=validated_data["cpf"],
+                name=validated_data["name"],
                 client=client,
             )
             user.save()
-        except DjangoValidationError as e:
+        except (DjangoValidationError, ClientModel.DoesNotExist) as e:
             client.delete()
             raise ValidationError(e)
 
