@@ -1,6 +1,6 @@
 import logging
 
-from requests.exceptions import HTTPError
+from requests.exceptions import HTTPError, RequestException
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
@@ -13,6 +13,8 @@ from transaction.services.rollback_service import RollbackService
 from transaction.services.transfer_service import TransferService
 
 # Create your views here.
+
+logger = logging.getLogger(__name__)
 
 
 class TransactionViewSet(ViewSet):
@@ -33,21 +35,25 @@ class TransactionViewSet(ViewSet):
 
         ### challenge business rule
         try:
-            response = requests.get("https://util.devi.tools/api/v2/authorize")
+            response = requests.get(
+                "https://util.devi.tools/api/v2/authorize", timeout=5
+            )
             payload = response.json()
             response.raise_for_status()
         except HTTPError as e:
-            logging.error({"unauthorized": payload})
+            logger.error({"unauthorized": payload}) if payload else logger.error(
+                "unauthorized"
+            )
             RollbackService.rollback_due_to_inconsistency(data)
             raise PermissionDenied(e)
         ###
 
         ### challenge business rule
         try:
-            response = requests.post("https://util.devi.tools/api/v1/notify", payload)
+            response = requests.post("https://util.devi.tools/api/v1/notify", data)
             response.raise_for_status()
-        except HTTPError:
-            logging.error("notification error")
+        except RequestException:
+            logger.exception("Notification service unavailable")
             ###
 
         return Response(

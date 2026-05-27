@@ -2,8 +2,8 @@ POST http://127.0.0.1:8000/bank/user/ HTTP/1.1
 Content-Type: application/json
 
 {
-    "email": "crud2@email.com",
+    "email": "crud3@email.com",
     "password": "blabla12",
-    "cpf": "10281918272",
-    "name": "Crud2 Test"
+    "cpf": "95829182722",
+    "name": "Crud4 Test"
 }

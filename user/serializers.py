@@ -1,4 +1,5 @@
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db.utils import IntegrityError
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
@@ -28,7 +29,7 @@ class UserSerializer(serializers.Serializer):
                 client=client,
             )
             user.save()
-        except (DjangoValidationError, ClientModel.DoesNotExist) as e:
+        except (DjangoValidationError, IntegrityError, ClientModel.DoesNotExist) as e:
             client.delete()
             raise ValidationError(e)
 

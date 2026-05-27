@@ -1,4 +1,5 @@
 from django.contrib.auth import login, logout
+from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -11,10 +12,11 @@ from core.serializers import AuthSerializer
 # Create your views here.
 class IndexApiView(APIView):
     def get(self, request):
-        return Response({"handshake": "Hello, from my bank_challenge app!"})
+        print(request.COOKIES)
+        return Response({"status": "ok"})
 
 
-class LoginViewSet(ViewSet):
+class AuthViewSet(ViewSet):
     @action(detail=False, methods=["POST"])
     def login(self, request):
         serializer = AuthSerializer(data=request.data)
@@ -23,10 +25,9 @@ class LoginViewSet(ViewSet):
 
         login(request, user)
 
-        return Response({"login": user.email})
+        return Response({"detail": "ok"})
 
     @action(detail=False, methods=["POST"], permission_classes=[IsAuthenticated])
     def logout(self, request):
-        user = request.user
         logout(request)
-        return Response({"logout": user.email})
+        return Response(status=status.HTTP_204_NO_CONTENT)
