@@ -33,6 +33,5 @@ class RollbackService:
             transaction.refund = True
             transaction.save()
 
-            return f"Reversed {transaction.transaction_type} transaction."
         except DjangoValidationError as e:
             raise ValidationError(e)

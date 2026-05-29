@@ -12,7 +12,6 @@ from core.serializers import AuthSerializer
 # Create your views here.
 class IndexApiView(APIView):
     def get(self, request):
-        print(request.COOKIES)
         return Response({"status": "ok"})
 
 

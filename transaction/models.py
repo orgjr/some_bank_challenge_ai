@@ -32,7 +32,7 @@ class TransactionModel(models.Model):
         else:
             return f"{self.payer} / {self.transaction_type}"
 
-    def allowed_transfer(self):
+    def allow_transfer(self):
         ### challenge business rule
         if self.payer.client.client_type == "store":
             raise ValidationError("Stores can not make transfer transactions")

@@ -11,6 +11,34 @@ Esta implementacao nao replica o contrato original de forma literal em todos os 
 - Django REST Framework
 - SQLite em ambiente local
 - Autenticacao por sessao do Django
+- Docker e Docker Compose para execucao em container
+
+## Configuracoes por ambiente
+
+As configuracoes do Django ficam separadas no pacote `bank_challenge_ai/settings/`.
+
+- `base.py`: configuracoes comuns da aplicacao, apps instalados, middlewares, timezone, static files e modelo de usuario customizado.
+- `development.py`: configuracao para desenvolvimento local, com `DEBUG = True`, hosts locais e banco SQLite em `db.sqlite3`.
+- `testing.py`: configuracao para testes, com banco SQLite em memoria, password hasher mais rapido e backend de e-mail em memoria.
+- `production.py`: configuracao esperada para producao, com `DEBUG = False`, `ALLOWED_HOSTS` via variavel de ambiente e banco PostgreSQL via variaveis `POSTGRES_*`.
+
+Para escolher o ambiente, defina a variavel `DJANGO_SETTINGS_MODULE`.
+
+Exemplo para desenvolvimento:
+
+```bash
+export DJANGO_SETTINGS_MODULE=bank_challenge_ai.settings.development
+export SECRET_KEY="dev-secret"
+export DEV_PROJECT_KEY="dev-secret"
+```
+
+Exemplo para testes:
+
+```bash
+SECRET_KEY=test DJANGO_SETTINGS_MODULE=bank_challenge_ai.settings.testing python manage.py test
+```
+
+Observacao: atualmente `base.py` le `SECRET_KEY` durante o import das configuracoes, entao essa variavel precisa existir mesmo quando um modulo especifico sobrescreve o valor depois.
 
 ## Regras de negocio atendidas
 
@@ -97,6 +125,12 @@ Em desenvolvimento local:
 
 ```http
 http://127.0.0.1:8000/bank/
+```
+
+Com Docker Compose:
+
+```http
+http://localhost:8000/bank/
 ```
 
 ## Autenticacao
@@ -323,7 +357,7 @@ Os testes foram organizados nos arquivos `tests.py` de cada app, mantendo cada r
 Para executar:
 
 ```bash
-DEV_PROJECT_KEY=test .venv/bin/python manage.py test
+SECRET_KEY=test DJANGO_SETTINGS_MODULE=bank_challenge_ai.settings.testing .venv/bin/python manage.py test
 ```
 
 Casos implementados por app:
@@ -345,10 +379,12 @@ Tipos de teste usados:
 
 ## Como executar localmente
 
-Ative o ambiente virtual e defina a chave de desenvolvimento:
+Ative o ambiente virtual, defina o modulo de configuracao e as chaves de desenvolvimento:
 
 ```bash
 source .venv/bin/activate
+export DJANGO_SETTINGS_MODULE=bank_challenge_ai.settings.development
+export SECRET_KEY="dev-secret"
 export DEV_PROJECT_KEY="dev-secret"
 python manage.py migrate
 python manage.py runserver
@@ -359,6 +395,49 @@ Depois acesse:
 ```http
 http://127.0.0.1:8000/bank/
 ```
+
+## Como executar com Docker
+
+O projeto inclui `Dockerfile`, `.dockerignore` e `compose.yaml` para execucao em container. O Compose usa o ambiente de desenvolvimento (`bank_challenge_ai.settings.development`), publica a porta `8000` e executa as migracoes antes de iniciar o servidor do Django.
+
+Para construir a imagem e subir a aplicacao:
+
+```bash
+docker compose up --build
+```
+
+Depois acesse:
+
+```http
+http://localhost:8000/bank/
+```
+
+Para rodar em segundo plano:
+
+```bash
+docker compose up -d --build
+```
+
+Para acompanhar os logs:
+
+```bash
+docker compose logs -f web
+```
+
+Para parar e remover os containers:
+
+```bash
+docker compose down
+```
+
+Para executar comandos do Django dentro do container:
+
+```bash
+docker compose exec web python manage.py test --settings=bank_challenge_ai.settings.testing
+docker compose exec web python manage.py migrate
+```
+
+O `compose.yaml` monta o diretorio do projeto em `/app`, entao alteracoes no codigo local ficam disponiveis no container durante o desenvolvimento.
 
 ## User roadmap
 
@@ -387,8 +466,8 @@ http://127.0.0.1:8000/bank/
 
 - ~~Criar uma service layer para centralizar o caso de uso de transferencia, autorizacao, notificacao e rollback.~~
 - ~~Usar `transaction.atomic()` e bloqueio de linhas quando houver banco relacional adequado para concorrencia.~~
-- Conteinerizar a aplicacao com Docker e Docker Compose.
-- Separar configuracoes por ambiente: desenvolvimento, teste e producao.
+- ~~Conteinerizar a aplicacao com Docker e Docker Compose.~~
+- ~~Separar configuracoes por ambiente: desenvolvimento, teste e producao.~~
 - ~~Adicionar testes automatizados de unidade e integracao para as regras de negocio.~~
 - Criar documentacao OpenAPI/Swagger.
 - Adicionar CI para lint, testes e migracoes.

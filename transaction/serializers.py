@@ -16,14 +16,9 @@ class TransactionTransferSerializer(serializers.Serializer):
         error_messages={"invalid": "payee must be a valid account number."}
     )
 
-    def create(self, validated_data):
-        payee = validated_data["payee"]
+    def validate_payee(self, value):
         try:
-            payee_account = AccountModel.objects.get(number=payee)
-        except AccountModel.DoesNotExist as e:
-            raise ValidationError({"detail": "Beneficiary account does not exist"}, e)
-
-        return {
-            "payee": payee_account,
-            "value": validated_data["value"],
-        }
+            value = AccountModel.objects.get(number=value)
+            return value
+        except AccountModel.DoesNotExist:
+            raise ValidationError({"detail": "Beneficiary account does not exist"})

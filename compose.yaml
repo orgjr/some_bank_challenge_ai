@@ -1,0 +1,24 @@
+services:
+  web:
+    build:
+      context: .
+    container_name: bank_challenge_ai_web
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    environment:
+      DJANGO_SETTINGS_MODULE: bank_challenge_ai.settings.development
+      DEV_PROJECT_KEY: dev-secret-key
+      SECRET_KEY: dev-secret-key
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app:Z
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/bank/', timeout=5)\"",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s

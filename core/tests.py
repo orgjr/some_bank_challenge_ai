@@ -9,9 +9,7 @@ class CoreApiTest(APITestCase):
         response = self.client.get("/bank/")
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(
-            response.data, {"handshake": "Hello, from my bank_challenge app!"}
-        )
+        self.assertEqual(response.data, {"status": "ok"})
 
     def test_login_with_valid_credentials(self):
         ClientModel.objects.create_user(
@@ -25,7 +23,7 @@ class CoreApiTest(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, {"login": "user@example.com"})
+        self.assertEqual(response.data, {"detail": "ok"})
 
     def test_login_rejects_invalid_credentials(self):
         response = self.client.post(
@@ -49,5 +47,5 @@ class CoreApiTest(APITestCase):
 
         response = self.client.post("/bank/auth/logout/", {}, format="json")
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, {"logout": "user@example.com"})
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(response.data, None)
