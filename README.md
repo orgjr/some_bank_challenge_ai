@@ -153,7 +153,7 @@ Resposta:
 
 ```json
 {
-  "login": "cliente@email.com"
+  "detail": "ok"
 }
 ```
 
@@ -166,13 +166,7 @@ POST /bank/auth/logout/
 Content-Type: application/json
 ```
 
-Resposta:
-
-```json
-{
-  "logout": "cliente@email.com"
-}
-```
+status 204 sem resposta
 
 ## Endpoints
 
@@ -186,7 +180,7 @@ Resposta:
 
 ```json
 {
-  "handshake": "Hello, from my bank_challenge app!"
+  "status": "ok"
 }
 ```
 
