@@ -1,17 +1,15 @@
 from django.core.exceptions import ValidationError
 from django.db import models
 
-from account.models import AccountModel
+from account.models import Account
 
 
 # Create your models here.
-class TransactionModel(models.Model):
+class Transaction(models.Model):
     payer = models.ForeignKey(
-        AccountModel, related_name="transaction", on_delete=models.PROTECT
+        Account, related_name="transfer", on_delete=models.PROTECT
     )
-    payee = models.ForeignKey(
-        AccountModel, on_delete=models.PROTECT, blank=True, null=True
-    )
+    payee = models.ForeignKey(Account, on_delete=models.PROTECT, blank=True, null=True)
 
     class TransactionType(models.TextChoices):
         TRANSFER = "TF", "transfer"
@@ -34,20 +32,22 @@ class TransactionModel(models.Model):
 
     def allow_transfer(self):
         ### challenge business rule
-        if self.payer.client.client_type == "store":
-            raise ValidationError("Stores can not make transfer transactions")
+        if self.payer.client.client_type == "business":
+            raise ValidationError(
+                {"payer": "Business can not make transfer transactions"}
+            )
 
         if self.value > self.payer.balance:
-            raise ValidationError("Insuficient founds.")
+            raise ValidationError({"payer": "Insuficient founds."})
         ###
 
         ### other validations
         if not self.payee:
-            raise ValidationError("Transfer needs an payee account.")
+            raise ValidationError({"payee": "Transfer needs an payee account."})
 
         if self.payer == self.payee:
-            raise ValidationError("Cant transfer to same account")
+            raise ValidationError({"transfer": "Cant transfer to same account"})
 
-        if type(self.payee) is not AccountModel:
-            raise ValidationError("Invalid beneficiary account.")
+        if not isinstance(self.payee, Account):
+            raise ValidationError({"payee": "Payee account not found"})
         ###
