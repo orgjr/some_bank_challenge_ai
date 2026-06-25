@@ -1,9 +1,13 @@
 import os
+import time
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 SECRET_KEY = os.environ["SECRET_KEY"]
+
+# health check purpose
+START_TIME = time.time()
 
 DEBUG = False
 
