@@ -2,16 +2,16 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from account.views import AccountViewSet
+from business.views import BusinessViewSet
 from core.views import AuthViewSet, IndexApiView
-from store.views import StoreViewSet
+from person.views import PersonViewSet
 from transaction.views import TransactionViewSet
-from user.views import UserViewSet
 
 router = DefaultRouter()
 router.register(r"auth", AuthViewSet, basename="authentication")
 router.register(r"transaction", TransactionViewSet, basename="transaction")
-router.register(r"user", UserViewSet, basename="user")
-router.register(r"store", StoreViewSet, basename="store")
+router.register(r"person", PersonViewSet, basename="person")
+router.register(r"business", BusinessViewSet, basename="business")
 router.register(r"account", AccountViewSet, basename="account")
 
 urlpatterns = [
