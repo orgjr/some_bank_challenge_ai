@@ -3,11 +3,11 @@ import uuid
 
 from django.db import models
 
-from client.models import ClientModel
+from user.models import UserModel
 
 
 # Create your models here.
-class AccountModel(models.Model):
+class Account(models.Model):
     class AccountType(models.TextChoices):
         CONTA_CORRENTE = "CC", "conta corrente"
         POUPANCA = "CP", "conta poupança"
@@ -16,7 +16,7 @@ class AccountModel(models.Model):
         default=uuid.uuid4, unique=True, editable=False, primary_key=True
     )
     client = models.OneToOneField(
-        ClientModel, related_name="account", on_delete=models.CASCADE
+        UserModel, related_name="account", on_delete=models.CASCADE
     )
     agency = models.CharField(max_length=4, default=1002)
     number = models.CharField(max_length=7)
