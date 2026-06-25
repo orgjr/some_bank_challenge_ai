@@ -47,7 +47,4 @@ class Transaction(models.Model):
 
         if self.payer == self.payee:
             raise ValidationError({"transfer": "Cant transfer to same account"})
-
-        if not isinstance(self.payee, Account):
-            raise ValidationError({"payee": "Payee account not found"})
         ###
