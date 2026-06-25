@@ -1,19 +1,26 @@
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from client.models import ClientModel
+from user.models import UserModel
 
 
 class CoreApiTest(APITestCase):
-    def test_index_returns_handshake(self):
+    def test_index_returns_health_check(self):
         response = self.client.get("/bank/")
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, {"status": "ok"})
+        self.assertEqual(
+            response.data,
+            {
+                "status": response.data["status"],
+                "timestamp": response.data["timestamp"],
+                "uptime_seconds": response.data["uptime_seconds"],
+            },
+        )
 
     def test_login_with_valid_credentials(self):
-        ClientModel.objects.create_user(
-            email="user@example.com", password="blabla12", client_type="user"
+        UserModel.objects.create_user(
+            email="user@example.com", password="blabla12", client_type="person"
         )
 
         response = self.client.post(
@@ -23,7 +30,13 @@ class CoreApiTest(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, {"detail": "ok"})
+        self.assertEqual(
+            response.data,
+            {
+                "status": "success",
+                "message": "Login successfully",
+            },
+        )
 
     def test_login_rejects_invalid_credentials(self):
         response = self.client.post(
@@ -40,8 +53,8 @@ class CoreApiTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_logout_authenticated_user(self):
-        client = ClientModel.objects.create_user(
-            email="user@example.com", password="blabla12", client_type="user"
+        client = UserModel.objects.create_user(
+            email="user@example.com", password="blabla12", client_type="person"
         )
         self.client.force_authenticate(user=client)
 

@@ -5,14 +5,14 @@ from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.test import APITestCase
 
-from client.models import ClientModel
-from store.models import StoreModel
-from store.serializers import StoreSerializer
+from business.models import Business
+from business.serializers import BusinessSerializer
+from user.models import UserModel
 
 
-class StoreSerializerTest(TestCase):
-    def test_create_store_client_and_profile(self):
-        serializer = StoreSerializer(
+class BusinessSerializerTest(TestCase):
+    def test_create_business_user_model_and_profile(self):
+        serializer = BusinessSerializer(
             data={
                 "email": "store@example.com",
                 "password": "blabla12",
@@ -23,15 +23,15 @@ class StoreSerializerTest(TestCase):
         )
 
         self.assertTrue(serializer.is_valid(), serializer.errors)
-        store = serializer.save()
+        business = serializer.save()
 
-        self.assertEqual(store.client.email, "store@example.com")
-        self.assertEqual(store.client.client_type, "store")
-        self.assertEqual(store.razao_social, "Loja Teste LTDA")
-        self.assertTrue(store.client.check_password("blabla12"))
+        self.assertEqual(business.user_model.email, "store@example.com")
+        self.assertEqual(business.user_model.client_type, "business")
+        self.assertEqual(business.razao_social, "Loja Teste LTDA")
+        self.assertTrue(business.user_model.check_password("blabla12"))
 
     def test_create_requires_valid_email(self):
-        serializer = StoreSerializer(
+        serializer = BusinessSerializer(
             data={
                 "email": "invalid-email",
                 "password": "blabla12",
@@ -44,18 +44,18 @@ class StoreSerializerTest(TestCase):
         self.assertFalse(serializer.is_valid())
         self.assertIn("email", serializer.errors)
 
-    def test_create_removes_client_when_profile_validation_fails(self):
-        existing_client = ClientModel.objects.create_user(
-            email="existing@example.com", password="blabla12", client_type="store"
+    def test_create_removes_user_model_when_profile_validation_fails(self):
+        existing_client = UserModel.objects.create_user(
+            email="existing@example.com", password="blabla12", client_type="business"
         )
-        StoreModel.objects.create(
+        Business.objects.create(
             cnpj="12345678000199",
             razao_social="Loja Existente LTDA",
             nome_fantasia="Loja Existente",
-            client=existing_client,
+            user_model=existing_client,
         )
 
-        serializer = StoreSerializer(
+        serializer = BusinessSerializer(
             data={
                 "email": "new@example.com",
                 "password": "blabla12",
@@ -69,54 +69,55 @@ class StoreSerializerTest(TestCase):
         with self.assertRaises(ValidationError):
             serializer.save()
 
-        self.assertFalse(ClientModel.objects.filter(email="new@example.com").exists())
+        self.assertFalse(UserModel.objects.filter(email="new@example.com").exists())
 
 
-class StoreModelTest(TestCase):
-    def test_store_must_have_store_type_client(self):
-        user_client = ClientModel.objects.create_user(
-            email="user@example.com", password="blabla12", client_type="user"
+class BusinessTest(TestCase):
+    def test_business_must_have_business_client_type(self):
+        user_client = UserModel.objects.create_user(
+            email="user@example.com", password="blabla12", client_type="person"
         )
 
-        store = StoreModel(
+        store = Business(
             cnpj="12345678000199",
             razao_social="Loja Teste LTDA",
             nome_fantasia="Loja Teste",
-            client=user_client,
+            user_model=user_client,
         )
 
         with self.assertRaisesMessage(
-            DjangoValidationError, "Client must be 'store' type."
+            DjangoValidationError,
+            str({"client_type": ['business must be client_type="business"']}),
         ):
             store.save()
 
     def test_cnpj_and_razao_social_must_be_unique(self):
-        first_client = ClientModel.objects.create_user(
-            email="one@example.com", password="blabla12", client_type="store"
+        first_client = UserModel.objects.create_user(
+            email="one@example.com", password="blabla12", client_type="business"
         )
-        second_client = ClientModel.objects.create_user(
-            email="two@example.com", password="blabla12", client_type="store"
+        second_client = UserModel.objects.create_user(
+            email="two@example.com", password="blabla12", client_type="business"
         )
-        StoreModel.objects.create(
+        Business.objects.create(
             cnpj="12345678000199",
             razao_social="Loja Teste LTDA",
             nome_fantasia="Loja Um",
-            client=first_client,
+            user_model=first_client,
         )
 
         with self.assertRaises((DjangoValidationError, IntegrityError)):
-            StoreModel.objects.create(
+            Business.objects.create(
                 cnpj="12345678000199",
                 razao_social="Loja Teste LTDA",
                 nome_fantasia="Loja Dois",
-                client=second_client,
+                user_model=second_client,
             )
 
 
 class StoreApiTest(APITestCase):
-    def test_create_store_endpoint(self):
+    def test_create_business_endpoint(self):
         response = self.client.post(
-            "/bank/store/",
+            "/bank/business/",
             {
                 "email": "store@example.com",
                 "password": "blabla12",
@@ -128,12 +129,12 @@ class StoreApiTest(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, {"store": "store@example.com"})
-        self.assertTrue(StoreModel.objects.filter(cnpj="12345678000199").exists())
+        self.assertEqual(response.data, {"business": "store@example.com"})
+        self.assertTrue(Business.objects.filter(cnpj="12345678000199").exists())
 
-    def test_create_store_endpoint_rejects_missing_required_fields(self):
+    def test_create_business_endpoint_rejects_missing_required_fields(self):
         response = self.client.post(
-            "/bank/store/",
+            "/bank/business/",
             {"email": "store@example.com", "password": "blabla12"},
             format="json",
         )

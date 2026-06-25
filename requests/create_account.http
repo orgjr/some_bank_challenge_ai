@@ -1,3 +1,3 @@
 POST http://127.0.0.1:8000/bank/account/
 Content-Type: application/json
-X-CSRFToken: AUFcIWH6pIZ8CBDg9HUuztga5wUvFn2I
+X-CSRFToken: LQdkEq3a5KxAOFRQ7EXuO9P20ciF8Q64

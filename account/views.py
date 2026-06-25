@@ -2,7 +2,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 
-from account.models import AccountModel
+from account.models import Account
 
 
 # Create your views here.
@@ -14,7 +14,7 @@ class AccountViewSet(ViewSet):
 
     def create(self, request):
         client = request.user
-        account = AccountModel.objects.create(client=client)
+        account = Account.objects.create(client=client)
         client_name = account.client.get_client_name()
 
         return Response(

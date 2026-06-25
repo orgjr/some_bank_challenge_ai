@@ -25,9 +25,9 @@ INSTALLED_APPS = [
     "rest_framework",
     # Local
     "account",
-    "client",
+    "business",
     "core",
-    "store",
+    "person",
     "transaction",
     "user",
 ]
@@ -87,4 +87,4 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-AUTH_USER_MODEL = "client.ClientModel"
+AUTH_USER_MODEL = "user.UserModel"

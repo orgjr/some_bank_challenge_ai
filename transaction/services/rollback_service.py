@@ -3,8 +3,8 @@ from django.db.models import F
 from django.db.transaction import atomic
 from rest_framework.exceptions import ValidationError
 
-from account.models import AccountModel
-from transaction.models import TransactionModel
+from account.models import Account
+from transaction.models import Transaction
 
 
 class RollbackService:
@@ -13,14 +13,10 @@ class RollbackService:
     @atomic
     def rollback_due_to_inconsistency(validated_data):
         try:
-            transaction = TransactionModel(**validated_data)
+            transaction = Transaction(**validated_data)
 
-            payer = AccountModel.objects.select_for_update().get(
-                pk=transaction.payer.pk
-            )
-            payee = AccountModel.objects.select_for_update().get(
-                pk=transaction.payee.pk
-            )
+            payer = Account.objects.select_for_update().get(pk=transaction.payer.pk)
+            payee = Account.objects.select_for_update().get(pk=transaction.payee.pk)
 
             # payer
             payer.balance = F("balance") + transaction.value

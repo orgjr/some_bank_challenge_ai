@@ -3,34 +3,34 @@ from django.db.utils import IntegrityError
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-from client.models import ClientModel
+from person.models import Person
 from user.models import UserModel
 
 
-class UserSerializer(serializers.Serializer):
+class PersonSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField()
     cpf = serializers.CharField()
     name = serializers.CharField()
 
     def create(self, validated_data):
-        client = ClientModel()
+        user_model = UserModel()
 
         try:
-            client = ClientModel.objects.create_user(
+            user_model = UserModel.objects.create_user(
                 email=validated_data["email"],
                 password=validated_data["password"],
-                client_type="user",
+                client_type="person",
             )
 
-            user = UserModel.objects.create(
+            person = Person.objects.create(
                 cpf=validated_data["cpf"],
                 name=validated_data["name"],
-                client=client,
+                user_model=user_model,
             )
-            user.save()
-        except (DjangoValidationError, IntegrityError, ClientModel.DoesNotExist) as e:
-            client.delete()
+            person.save()
+        except (DjangoValidationError, IntegrityError, UserModel.DoesNotExist) as e:
+            user_model.delete()
             raise ValidationError(e)
 
-        return user
+        return person

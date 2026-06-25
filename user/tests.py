@@ -1,125 +1,86 @@
-from django.core.exceptions import ValidationError as DjangoValidationError
-from django.db import IntegrityError
+from django.core.exceptions import ValidationError
 from django.test import TestCase
-from rest_framework import status
-from rest_framework.exceptions import ValidationError
-from rest_framework.test import APITestCase
 
-from client.models import ClientModel
 from user.models import UserModel
-from user.serializers import UserSerializer
 
 
-class UserSerializerTest(TestCase):
-    def test_create_user_client_and_profile(self):
-        serializer = UserSerializer(
-            data={
-                "email": "user@example.com",
-                "password": "blabla12",
-                "cpf": "12345678901",
-                "name": "Usuario Teste",
-            }
-        )
-
-        self.assertTrue(serializer.is_valid(), serializer.errors)
-        user = serializer.save()
-
-        self.assertEqual(user.name, "Usuario Teste")
-        self.assertEqual(user.client.email, "user@example.com")
-        self.assertEqual(user.client.client_type, "user")
-        self.assertTrue(user.client.check_password("blabla12"))
-
-    def test_create_requires_valid_email(self):
-        serializer = UserSerializer(
-            data={
-                "email": "invalid-email",
-                "password": "blabla12",
-                "cpf": "12345678901",
-                "name": "Usuario Teste",
-            }
-        )
-
-        self.assertFalse(serializer.is_valid())
-        self.assertIn("email", serializer.errors)
-
-    def test_create_removes_client_when_profile_validation_fails(self):
-        existing_client = ClientModel.objects.create_user(
-            email="existing@example.com", password="blabla12", client_type="user"
-        )
-        UserModel.objects.create(
-            cpf="12345678901", name="Existente", client=existing_client
-        )
-
-        serializer = UserSerializer(
-            data={
-                "email": "new@example.com",
-                "password": "blabla12",
-                "cpf": "12345678901",
-                "name": "Duplicado",
-            }
-        )
-
-        self.assertTrue(serializer.is_valid(), serializer.errors)
-        with self.assertRaises(ValidationError):
-            serializer.save()
-
-        self.assertFalse(ClientModel.objects.filter(email="new@example.com").exists())
-
-
-class UserModelTest(TestCase):
-    def test_user_must_have_user_type_client(self):
-        store_client = ClientModel.objects.create_user(
-            email="store@example.com", password="blabla12", client_type="store"
-        )
-
-        user = UserModel(cpf="12345678901", name="Usuario", client=store_client)
-
-        with self.assertRaisesMessage(
-            DjangoValidationError, "Client must be 'user' type."
-        ):
-            user.save()
-
-    def test_cpf_must_be_unique(self):
-        first_client = ClientModel.objects.create_user(
-            email="one@example.com", password="blabla12", client_type="user"
-        )
-        second_client = ClientModel.objects.create_user(
-            email="two@example.com", password="blabla12", client_type="user"
-        )
-        UserModel.objects.create(
-            cpf="12345678901", name="Primeiro", client=first_client
-        )
-
-        with self.assertRaises((DjangoValidationError, IntegrityError)):
-            UserModel.objects.create(
-                cpf="12345678901", name="Segundo", client=second_client
+class UserManagerTest(TestCase):
+    def test_create_user_requires_email(self):
+        with self.assertRaisesMessage(ValueError, "email is required"):
+            UserModel.objects.create_user(
+                email="", password="blabla12", client_type="person"
             )
 
+    def test_create_user_requires_password(self):
+        with self.assertRaisesMessage(ValueError, "password is required"):
+            UserModel.objects.create_user(
+                email="user@example.com", password="", client_type="person"
+            )
 
-class UserApiTest(APITestCase):
-    def test_create_user_endpoint(self):
-        response = self.client.post(
-            "/bank/user/",
-            {
-                "email": "user@example.com",
-                "password": "blabla12",
-                "cpf": "12345678901",
-                "name": "Usuario Teste",
-            },
-            format="json",
+    def test_create_user_requires_valid_client_type(self):
+        with self.assertRaisesMessage(
+            ValueError, str({"client_type": 'Must be "business" or "person"'})
+        ):
+            UserModel.objects.create_user(
+                email="user@example.com", password="blabla12", client_type="admin"
+            )
+
+    def test_validate_password_size(self):
+        with self.assertRaisesMessage(
+            ValidationError,
+            "This password is too short. It must contain at least 8 characters",
+        ):
+            UserModel.objects.create_user(
+                email="user@example.com", password="a123", client_type="person"
+            )
+
+    def test_validate_password_strength_numeric(self):
+        with self.assertRaisesMessage(
+            ValidationError,
+            "['This password is too common.', 'This password is entirely numeric.']",
+        ):
+            UserModel.objects.create_user(
+                email="user@example.com", password="12345678", client_type="person"
+            )
+
+    def test_validate_password_strength(self):
+        with self.assertRaisesMessage(
+            ValidationError,
+            "This password is too common.",
+        ):
+            UserModel.objects.create_user(
+                email="user@example.com", password="senha123", client_type="person"
+            )
+
+    def test_create_user_normalizes_email_and_hashes_password(self):
+        client = UserModel.objects.create_user(
+            email="USER@EXAMPLE.COM",
+            password="blabla12",
+            client_type="person",
         )
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, {"user": "user@example.com"})
-        self.assertTrue(UserModel.objects.filter(cpf="12345678901").exists())
+        self.assertEqual(client.email, "USER@example.com")
+        self.assertTrue(client.check_password("blabla12"))
+        self.assertNotEqual(client.password, "blabla12")
 
-    def test_create_user_endpoint_rejects_missing_required_fields(self):
-        response = self.client.post(
-            "/bank/user/",
-            {"email": "user@example.com", "password": "blabla12"},
-            format="json",
+    def test_get_client_name_returns_related_person_or_business_name(self):
+        person_client = UserModel.objects.create_user(
+            email="person@example.com", password="blabla12", client_type="person"
+        )
+        business_client = UserModel.objects.create_user(
+            email="store@example.com", password="blabla12", client_type="business"
         )
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("cpf", response.data)
-        self.assertIn("name", response.data)
+        from business.models import Business
+        from person.models import Person
+
+        Person.objects.create(cpf="12345678901", name="Maria", user_model=person_client)
+        Business.objects.create(
+            cnpj="12345678000199",
+            razao_social="Loja Teste LTDA",
+            nome_fantasia="Loja Teste",
+            user_model=business_client,
+        )
+
+        self.assertEqual(person_client.get_client_name(), "Maria")
+        self.assertEqual(business_client.get_client_name(), "Loja Teste LTDA")

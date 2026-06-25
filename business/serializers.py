@@ -1,12 +1,13 @@
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db.utils import IntegrityError
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-from client.models import ClientModel
-from store.models import StoreModel
+from business.models import Business
+from user.models import UserModel
 
 
-class StoreSerializer(serializers.Serializer):
+class BusinessSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField()
     cnpj = serializers.CharField()
@@ -14,23 +15,23 @@ class StoreSerializer(serializers.Serializer):
     nome_fantasia = serializers.CharField()
 
     def create(self, validated_data):
-        client = ClientModel()
+        user_model = UserModel()
         try:
-            client = ClientModel.objects.create_user(
+            user_model = UserModel.objects.create_user(
                 email=validated_data["email"],
                 password=validated_data["password"],
-                client_type="store",
+                client_type="business",
             )
 
-            store = StoreModel.objects.create(
+            business = Business.objects.create(
                 cnpj=validated_data["cnpj"],
                 razao_social=validated_data["razao_social"],
                 nome_fantasia=validated_data["nome_fantasia"],
-                client=client,
+                user_model=user_model,
             )
-            store.save()
-        except (DjangoValidationError, ClientModel.DoesNotExist) as e:
-            client.delete()
+            business.save()
+        except (DjangoValidationError, IntegrityError, UserModel.DoesNotExist) as e:
+            user_model.delete()
             raise ValidationError(e)
 
-        return store
+        return business
