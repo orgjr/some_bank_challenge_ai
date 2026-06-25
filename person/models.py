@@ -22,5 +22,5 @@ class Person(models.Model):
     def clean(self):
         if self.user_model.client_type != "person":
             raise ValidationError(
-                {"client_type": 'Person must be client_type="person" type'}
+                {"client_type": 'person must be client_type="person" type'}
             )

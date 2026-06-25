@@ -34,17 +34,17 @@ class Transaction(models.Model):
         ### challenge business rule
         if self.payer.client.client_type == "business":
             raise ValidationError(
-                {"payer": "Business can not make transfer transactions"}
+                {"payer": "business can not make transfer transactions"}
             )
 
         if self.value > self.payer.balance:
-            raise ValidationError({"payer": "Insuficient founds."})
+            raise ValidationError({"payer": "insuficient founds"})
         ###
 
         ### other validations
         if not self.payee:
-            raise ValidationError({"payee": "Transfer needs an payee account."})
+            raise ValidationError({"payee": "transfer needs an payee account"})
 
         if self.payer == self.payee:
-            raise ValidationError({"transfer": "Cant transfer to same account"})
+            raise ValidationError({"transfer": "cant transfer to same account"})
         ###

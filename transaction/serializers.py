@@ -1,10 +1,10 @@
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-from account.models import AccountModel
+from account.models import Account
 
 
-class TransactionTransferSerializer(serializers.Serializer):
+class TransferSerializer(serializers.Serializer):
     value = serializers.DecimalField(
         max_digits=8,
         decimal_places=2,
@@ -13,12 +13,12 @@ class TransactionTransferSerializer(serializers.Serializer):
         },
     )
     payee = serializers.IntegerField(
-        error_messages={"invalid": "payee must be a valid account number."}
+        error_messages={"invalid": "payee must be a valid account number"}
     )
 
     def validate_payee(self, value):
         try:
-            value = AccountModel.objects.get(number=value)
+            value = Account.objects.get(number=value)
             return value
-        except AccountModel.DoesNotExist:
-            raise ValidationError({"detail": "Beneficiary account does not exist"})
+        except Account.DoesNotExist:
+            raise ValidationError({"payee": "payee account not found"})

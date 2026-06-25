@@ -23,5 +23,5 @@ class Business(models.Model):
     def clean(self):
         if self.user_model.client_type != "business":
             raise ValidationError(
-                {"client_type": 'Business must be client_type="business"'}
+                {"client_type": 'business must be client_type="business"'}
             )
