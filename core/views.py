@@ -35,7 +35,12 @@ class AuthViewSet(ViewSet):
 
         login(request, user)
 
-        return Response({"detail": "ok"})
+        return Response(
+            {
+                "status": "success",
+                "message": "Login successfully",
+            }
+        )
 
     @action(detail=False, methods=["POST"], permission_classes=[IsAuthenticated])
     def logout(self, request):
