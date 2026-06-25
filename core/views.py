@@ -1,4 +1,9 @@
+import time
+from datetime import datetime
+
+from django.conf import settings
 from django.contrib.auth import login, logout
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -12,7 +17,13 @@ from core.serializers import AuthSerializer
 # Create your views here.
 class IndexApiView(APIView):
     def get(self, request):
-        return Response({"status": "ok"})
+        return Response(
+            {
+                "status": "ok",
+                "timestamp": timezone.make_aware(datetime.now()),
+                "uptime_seconds": int(time.time() - settings.START_TIME),
+            }
+        )
 
 
 class AuthViewSet(ViewSet):
