@@ -84,3 +84,22 @@ class UserManagerTest(TestCase):
 
         self.assertEqual(person_client.get_client_name(), "Maria")
         self.assertEqual(business_client.get_client_name(), "Loja Teste LTDA")
+
+    def test_reject_instances_with_create_method(self):
+
+        with self.assertRaisesMessage(NotImplementedError, "Use create_user() instead"):
+            UserModel.objects.create(
+                email="user@example.com", password="blabla12", client_type="person"
+            )
+
+    def test_reject_instances_marked_as_superuser_and_client(self):
+        with self.assertRaisesMessage(
+            ValidationError,
+            str({"__all__": ["Constraint “superuser_or_client” is violated."]}),
+        ):
+            UserModel.objects.create_user(
+                email="user@example.com",
+                password="blabla12",
+                is_superuser=True,
+                client_type="person",
+            )
