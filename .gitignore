@@ -1,0 +1,109 @@
+# =========================
+# Python
+# =========================
+
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+.Python
+build/
+dist/
+downloads/
+eggs/
+*.egg-info/
+MANIFEST
+
+# =========================
+# Virtual environments
+# =========================
+
+.env
+.env.*
+.venv/
+venv/
+env/
+ENV/
+
+# =========================
+# Django
+# =========================
+
+local_settings.py
+db.sqlite3
+*.sqlite3
+
+# migrations (NÃO ignorar migrations)
+# migrations/  <-- não incluir
+
+# =========================
+# Testing / coverage
+# =========================
+
+.pytest_cache/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+.cache
+hypothesis/
+
+# =========================
+# Logs / runtime
+# =========================
+
+*.log
+celerybeat-schedule
+celerybeat.pid
+
+# =========================
+# Jupyter
+# =========================
+
+.ipynb_checkpoints
+
+# =========================
+# Build / docs / tooling
+# =========================
+
+*.mo
+*.pot
+docs/_build/
+.pybuilder/
+target/
+.site/
+
+# =========================
+# Type checkers / linters
+# =========================
+
+.mypy_cache/
+.dmypy.json
+.pyre/
+.pytype/
+
+# =========================
+# IDEs / Editors
+# =========================
+
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# =========================
+# OS files
+# =========================
+
+.DS_Store
+Thumbs.db
+
+# =========================
+# SQL / misc
+# =========================
+
+*.session.sql
