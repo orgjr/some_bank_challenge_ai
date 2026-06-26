@@ -42,13 +42,13 @@ Observacao: atualmente `base.py` le `SECRET_KEY` durante o import das configurac
 
 ## Regras de negocio atendidas
 
-- Usuarios comuns e lojistas possuem credenciais de acesso por e-mail e senha.
-- E-mails sao unicos no sistema por meio do modelo `ClientModel`.
+- Usuarios comuns e empresas possuem credenciais de acesso por e-mail e senha.
+- E-mails sao unicos no sistema por meio do modelo `UserModel`.
 - CPF de usuario comum e unico no sistema.
-- CNPJ e razao social de lojista sao unicos no sistema.
-- O tipo do cliente e separado entre `user` e `store`.
-- Usuarios comuns podem enviar dinheiro para outros usuarios ou lojistas.
-- Lojistas nao podem enviar transferencias.
+- CNPJ e razao social de empresas sao unicos no sistema.
+- O tipo do cliente e separado entre `person` e `business`.
+- Usuarios comuns podem enviar dinheiro para outros usuarios ou empresas.
+- Empresas nao podem enviar transferencias.
 - A transferencia valida saldo suficiente antes de movimentar dinheiro.
 - A transferencia nao permite que uma conta envie dinheiro para ela mesma.
 - O recebedor precisa ser uma conta valida.
@@ -56,12 +56,13 @@ Observacao: atualmente `base.py` le `SECRET_KEY` durante o import das configurac
   `GET https://util.devi.tools/api/v2/authorize`
 - Apos a transferencia, a API tenta enviar notificacao pelo mock externo:
   `POST https://util.devi.tools/api/v1/notify`
+- Transferências não autorizadas são registradas em log.
 - Falha no envio de notificacao e registrada em log e nao desfaz a transferencia ja autorizada.
 - A tratativa de reversão e feita por servico que mantem o registro da transferencia recusada e cria um novo registro de estorno com uma flag `refund true`.
 
 ## Modelo de dominio
 
-### Client
+### User
 
 Representa a identidade autenticavel do sistema.
 
@@ -69,9 +70,9 @@ Campos principais:
 
 - `email`: unico.
 - `password`: armazenado com hash pelo Django.
-- `client_type`: `user` ou `store`.
+- `client_type`: `person` ou `business`.
 
-### User
+### Person
 
 Representa uma pessoa fisica.
 
@@ -79,9 +80,9 @@ Campos:
 
 - `name`
 - `cpf`: unico.
-- `client`: relacionamento 1:1 com `ClientModel`.
+- `user_model`: relacionamento 1:1 com `UserModel`.
 
-### Store
+### Business
 
 Representa um lojista.
 
@@ -90,7 +91,7 @@ Campos:
 - `cnpj`: unico.
 - `razao_social`: unica.
 - `nome_fantasia`
-- `client`: relacionamento 1:1 com `ClientModel`.
+- `user_model`: relacionamento 1:1 com `UserModel`.
 
 ### Account
 
@@ -153,7 +154,8 @@ Resposta:
 
 ```json
 {
-  "detail": "ok"
+  "status": "success",
+  "message": "Login successfully"
 }
 ```
 
@@ -180,14 +182,16 @@ Resposta:
 
 ```json
 {
-  "status": "ok"
+  "status": "ok",
+  "timestamp": "horário local da requisição",
+  "uptime_seconds": "tempo em segundos em que o servidor está ativo"
 }
 ```
 
 ### Criar usuario comum
 
 ```http
-POST /bank/user/
+POST /bank/person/
 Content-Type: application/json
 
 {
@@ -210,12 +214,12 @@ Validacoes importantes:
 
 - `email` deve ser unico.
 - `cpf` deve ser unico.
-- O cliente criado recebe `client_type = "user"`.
+- O cliente criado recebe `client_type = "person"`.
 
-### Criar lojista
+### Criar usuário empresarial
 
 ```http
-POST /bank/store/
+POST /bank/business/
 Content-Type: application/json
 
 {
@@ -240,7 +244,7 @@ Validacoes importantes:
 - `email` deve ser unico.
 - `cnpj` deve ser unico.
 - `razao_social` deve ser unica.
-- O cliente criado recebe `client_type = "store"`.
+- O cliente criado recebe `client_type = "business"`.
 
 ### Criar conta
 
@@ -262,7 +266,7 @@ Resposta:
 Observacoes:
 
 - A conta e vinculada ao usuario autenticado.
-- O numero da conta possui 7 dígitos e e gerado automaticamente.
+- O numero da conta e gerado automaticamente e possui 7 dígitos.
 - O saldo inicial tambem e gerado automaticamente no ambiente atual, valor entre 2000 e 10000.
 - O modelo impede saldo negativo.
 
@@ -319,7 +323,7 @@ Fluxo executado:
    - transferências precisam de um beneficiário;
    - nao e possivel transferencia para a mesma conta;
    - a transferencia precisa ser para uma conta registrada no app;
-   - modelo de usuarios garante que uma conta user so pode ser criada se o client for do tipo 'user' e store apenas para client tipo 'store';
+   - modelo de usuarios garante que uma conta `person` so pode ser criada se o client for do tipo 'person' e `business` apenas para client tipo 'business';
 6. O saldo e debitado do pagador.
 7. O saldo e creditado no recebedor.
 8. A transacao e registrada.
@@ -338,11 +342,12 @@ Possiveis erros de negocio:
 ## Observacoes tecnicas
 
 - O projeto usa `ViewSet` e actions do Django REST Framework.
-- A transferencia e feita pelo servico `TransferService` desacoplado do modelo `TransactionModel`, que executa as validacoes e a movimentacao de saldo.
+- A transferencia e feita pelo servico `TransferService` desacoplado do modelo `Transaction`, que executa as validacoes e a movimentacao de saldo.
 - O autorizador externo e chamado apos a criacao da transacao.
-- Se a transacao nao for autorizada o reembolso e feito pelo servico `RollbackService` que faz uma operacao inversa, estornando ao pagador e debitando do beneficiario.
-- A notificacao externa e chamada depois da transferencia; falhas sao registradas, mas nao impedem a resposta de sucesso.
-- As operacoes de transferencia e rollback sao atomicas, com protecao contra concorrencia, garantindo que as transacoes sejam feitas no banco de forma segura.
+- Se a transacao nao for autorizada a transação não é concluída e fica registrado em log a recusa e a resposta do serviço autorizador.
+- Se ocorrer algum erro no processamento da transação, o reembolso e feito pelo servico `RollbackService` que faz uma operacao inversa, estornando ao pagador e debitando do beneficiario. Uma flag 'refund=True' é registrada em operações de estorno. Os registros das duas transações são mantidos.
+- A notificacao externa é chamada depois da transferencia; falhas sao registradas, mas nao impedem a resposta de sucesso.
+- As operacoes de transferencia e rollback sao atomicas(transações completas), com protecao contra concorrencia(apenas uma por operação), garantindo que as transacoes sejam registradas de forma segura.
 
 ## Testes automatizados
 
@@ -356,9 +361,9 @@ SECRET_KEY=test DJANGO_SETTINGS_MODULE=bank_challenge_ai.settings.testing .venv/
 
 Casos implementados por app:
 
-- `client`: valida criacao de cliente, obrigatoriedade de e-mail e senha, força da senha, tipos permitidos (`user` e `store`), normalizacao de e-mail, hash de senha e retorno do nome relacionado ao perfil de usuario ou lojista.
-- `user`: valida criacao de usuario via serializer, e-mail invalido, campos obrigatorios no endpoint, unicidade de CPF, obrigatoriedade de `client_type = "user"` e remocao do `ClientModel` quando a criacao do perfil falha.
-- `store`: valida criacao de lojista via serializer, e-mail invalido, campos obrigatorios no endpoint, unicidade de CNPJ e razao social, obrigatoriedade de `client_type = "store"` e remocao do `ClientModel` quando a criacao do perfil falha.
+- `user`: valida criacao de cliente, obrigatoriedade de e-mail e senha, força da senha, tipos permitidos (`person` e `business`), normalizacao de e-mail, hash de senha, retorno do nome relacionado ao perfil de usuario ou lojista, método único para criação de contas e rejeição de contas criadas como superusuário e cliente simultaneamente.
+- `person`: valida criacao de usuario via serializer, e-mail invalido, campos obrigatorios no endpoint, unicidade de CPF, obrigatoriedade de `client_type = "person"` e remocao do `UserModel` quando a criacao do perfil falha.
+- `business`: valida criacao de lojista via serializer, e-mail invalido, campos obrigatorios no endpoint, unicidade de CNPJ e razao social, obrigatoriedade de `client_type = "business"` e remocao do `UserModel` quando a criacao do perfil falha.
 - `account`: valida criacao de conta autenticada, bloqueio para usuario nao autenticado, geracao de numero de conta e saldo inicial, agencia padrao e regra de apenas uma conta por cliente.
 - `core`: valida health check, login com credenciais validas, rejeicao de credenciais invalidas, logout autenticado e bloqueio de logout sem autenticacao.
 - `transaction`: valida payload de transferencia, valor nao numerico, conta recebedora invalida ou inexistente, campos obrigatorios, movimentacao de saldo, criacao de transacao, bloqueio de lojista como pagador, saldo insuficiente, transferencia sem beneficiario, transferencia para a propria conta, rollback com flag de estorno e fluxo de API com autorizador/notificador externo simulados por mock.
@@ -371,7 +376,7 @@ Tipos de teste usados:
 - Testes de API: validam endpoints, autenticacao, respostas HTTP e fluxo do usuario.
 - Testes com mock de servicos externos: simulam autorizador e notificacao para evitar dependencia de rede e tornar a suite deterministica.
 
-## Como executar localmente
+## Como executar o projeto localmente
 
 Ative o ambiente virtual, defina o modulo de configuracao e as chaves de desenvolvimento:
 
@@ -437,7 +442,7 @@ O `compose.yaml` monta o diretorio do projeto em `/app`, entao alteracoes no cod
 
 ### Jornada atual
 
-- Criar cadastro como usuario comum ou lojista.
+- Criar cadastro como pessoa física ou empresa.
 - Fazer login.
 - Criar uma conta vinculada ao cliente autenticado.
 - Consultar o numero da conta retornado na criacao.
