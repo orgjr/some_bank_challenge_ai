@@ -6,10 +6,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 SECRET_KEY = os.environ["SECRET_KEY"]
 
-# health check purpose
+# health check
 START_TIME = time.time()
-
-DEBUG = False
 
 ALLOWED_HOSTS = []
 
@@ -30,6 +28,8 @@ INSTALLED_APPS = [
     "person",
     "transaction",
     "user",
+    "drf_spectacular",
+    "drf_spectacular_sidecar",
 ]
 
 MIDDLEWARE = [
@@ -75,6 +75,18 @@ AUTH_PASSWORD_VALIDATORS = [
         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
+
+REST_FRAMEWORK = {
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Some famous bank code challenge",
+    "DESCRIPTION": "This project is a coding challenge from a well-known digital bank and was used as a test to evaluate candidates during the recruitment process",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "COMPONENT_SPLIT_REQUEST": True,
+}
 
 LANGUAGE_CODE = "en-us"
 
