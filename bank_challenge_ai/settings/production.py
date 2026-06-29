@@ -2,6 +2,8 @@ import os
 
 from .base import *  # noqa: F401,F403
 
+ENV = "production"
+
 DEBUG = False
 
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
