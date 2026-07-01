@@ -8,24 +8,24 @@ from drf_spectacular.views import (
 from user.permissions import ENV_PERMISSION_CLASS
 
 urlpatterns = [
-    path("bank/", include("core.urls")),
+    path("api/v1/", include("core.urls")),
 ]
 
 urlpatterns += [
     path(
-        "api/schema/",
+        "api/v1/openapi/",
         SpectacularAPIView.as_view(permission_classes=[ENV_PERMISSION_CLASS]),
         name="schema",
     ),
     path(
-        "api/docs/",
+        "api/v1/docs/",
         SpectacularSwaggerView.as_view(
             url_name="schema", permission_classes=[ENV_PERMISSION_CLASS]
         ),
         name="swagger-ui",
     ),
     path(
-        "api/redoc/",
+        "api/v1/redoc/",
         SpectacularRedocView.as_view(
             url_name="schema", permission_classes=[ENV_PERMISSION_CLASS]
         ),
