@@ -6,6 +6,7 @@ from business.views import BusinessViewSet
 from core.views import AuthViewSet, HealthCheckAPIView, IndexAPIView
 from person.views import PersonViewSet
 from transaction.views import TransferViewSet
+from user.views import GetUserAPIView
 
 router = DefaultRouter()
 router.register(r"transfers", TransferViewSet, basename="transfer")
@@ -19,6 +20,7 @@ auth_router.register("", AuthViewSet, basename="authentication")
 urlpatterns = [
     path("", IndexAPIView.as_view(), name="index"),
     path("health/", HealthCheckAPIView.as_view(), name="health"),
+    path("users/me/", GetUserAPIView.as_view(), name="user-detail"),
     path("", include(router.urls)),
     path("", include(auth_router.urls)),
 ]
