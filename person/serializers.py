@@ -14,6 +14,13 @@ class PersonSerializer(serializers.ModelSerializer):
     class Meta:
         model = Person
         fields = ["user", "name", "cpf"]
+        extra_kwargs = {
+            "name": {"example": "Person Name"},
+            "cpf": {
+                "example": "12345678901",
+                "help_text": "Brazilian individual taxpayer identification number",
+            },
+        }
 
     def create(self, validated_data):
         user_model = UserModel()
