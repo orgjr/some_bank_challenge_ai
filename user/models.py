@@ -44,7 +44,7 @@ class UserModel(AbstractBaseUser):
         self.full_clean()
         super().save(*args, **kwargs)
 
-    def get_client_name(self):
+    def get_name(self):
         if hasattr(self, "person"):
             return self.person.name
         if hasattr(self, "business"):
