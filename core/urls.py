@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 
 from account.views import AccountViewSet
 from business.views import BusinessViewSet
-from core.views import AuthViewSet, IndexAPIView
+from core.views import AuthViewSet, HealthCheckAPIView, IndexAPIView
 from person.views import PersonViewSet
 from transaction.views import TransferViewSet
 
@@ -18,6 +18,7 @@ auth_router.register("", AuthViewSet, basename="authentication")
 
 urlpatterns = [
     path("", IndexAPIView.as_view(), name="index"),
+    path("health/", HealthCheckAPIView.as_view(), name="health"),
     path("", include(router.urls)),
     path("", include(auth_router.urls)),
 ]
