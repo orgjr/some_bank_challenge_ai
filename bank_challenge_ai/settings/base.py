@@ -83,9 +83,9 @@ REST_FRAMEWORK = {
 }
 
 SPECTACULAR_SETTINGS = {
-    "TITLE": "Some famous bank code challenge",
-    "DESCRIPTION": "This project is a coding challenge from a well-known digital bank and was used as a test to evaluate candidates during the recruitment process",
-    "VERSION": "1.0.0",
+    "TITLE": "Digital Banking API Challenge",
+    "DESCRIPTION": "This project is a backend coding challenge simulating a digital banking system. It implements core banking features such as account creation, transfers, transaction history, authorization flow, and notification processing. Built with Django and Django REST Framework, it demonstrates REST API design, service-oriented architecture, and transactional consistency.",
+    "VERSION": "0.9.0",
     "SERVE_INCLUDE_SCHEMA": False,
     "COMPONENT_SPLIT_REQUEST": True,
     "SWAGGER_UI_DIST": "SIDECAR",
