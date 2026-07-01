@@ -22,6 +22,7 @@ class UserModel(AbstractBaseUser):
         max_length=8, choices=ClientType, null=True, blank=True
     )
     is_superuser = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
