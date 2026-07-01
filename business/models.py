@@ -9,7 +9,7 @@ class Business(models.Model):
     cnpj = models.CharField(max_length=14, unique=True)
     razao_social = models.CharField(max_length=100, unique=True)
     nome_fantasia = models.CharField(max_length=256)
-    user_model = models.OneToOneField(
+    user = models.OneToOneField(
         UserModel, related_name="business", on_delete=models.CASCADE, default="business"
     )
 
@@ -21,7 +21,7 @@ class Business(models.Model):
         super().save(*args, **kwargs)
 
     def clean(self):
-        if self.user_model.client_type != "business":
+        if self.user.client_type != "business":
             raise ValidationError(
                 {"client_type": 'business must be client_type="business"'}
             )

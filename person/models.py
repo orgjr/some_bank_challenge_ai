@@ -8,7 +8,7 @@ from user.models import UserModel
 class Person(models.Model):
     cpf = models.CharField(max_length=11, unique=True)
     name = models.CharField(max_length=128)
-    user_model = models.OneToOneField(
+    user = models.OneToOneField(
         UserModel, related_name="person", on_delete=models.CASCADE, default="user"
     )
 
@@ -20,7 +20,7 @@ class Person(models.Model):
         super().save(*args, **kwargs)
 
     def clean(self):
-        if self.user_model.client_type != "person":
+        if self.user.client_type != "person":
             raise ValidationError(
                 {"client_type": 'person must be client_type="person" type'}
             )
