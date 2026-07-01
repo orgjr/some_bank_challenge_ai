@@ -5,13 +5,15 @@ from rest_framework.exceptions import ValidationError
 
 from person.models import Person
 from user.models import UserModel
+from user.serializers import UserCredentialsSerializer
 
 
-class PersonSerializer(serializers.Serializer):
-    email = serializers.EmailField()
-    password = serializers.CharField()
-    cpf = serializers.CharField()
-    name = serializers.CharField()
+class PersonSerializer(serializers.ModelSerializer):
+    user = UserCredentialsSerializer()
+
+    class Meta:
+        model = Person
+        fields = ["user", "name", "cpf"]
 
     def create(self, validated_data):
         user_model = UserModel()
@@ -26,7 +28,7 @@ class PersonSerializer(serializers.Serializer):
             person = Person.objects.create(
                 cpf=validated_data["cpf"],
                 name=validated_data["name"],
-                user_model=user_model,
+                user=user_model,
             )
             person.save()
         except (DjangoValidationError, IntegrityError, UserModel.DoesNotExist) as e:

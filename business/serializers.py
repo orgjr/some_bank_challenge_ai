@@ -5,21 +5,22 @@ from rest_framework.exceptions import ValidationError
 
 from business.models import Business
 from user.models import UserModel
+from user.serializers import UserCredentialsSerializer
 
 
-class BusinessSerializer(serializers.Serializer):
-    email = serializers.EmailField()
-    password = serializers.CharField()
-    cnpj = serializers.CharField()
-    razao_social = serializers.CharField()
-    nome_fantasia = serializers.CharField()
+class BusinessSerializer(serializers.ModelSerializer):
+    user = UserCredentialsSerializer()
+
+    class Meta:
+        model = Business
+        fields = ["user", "cnpj", "razao_social", "nome_fantasia"]
 
     def create(self, validated_data):
         user_model = UserModel()
         try:
             user_model = UserModel.objects.create_user(
-                email=validated_data["email"],
-                password=validated_data["password"],
+                email=validated_data["user"]["email"],
+                password=validated_data["user"]["password"],
                 client_type="business",
             )
 
@@ -27,7 +28,7 @@ class BusinessSerializer(serializers.Serializer):
                 cnpj=validated_data["cnpj"],
                 razao_social=validated_data["razao_social"],
                 nome_fantasia=validated_data["nome_fantasia"],
-                user_model=user_model,
+                user=user_model,
             )
             business.save()
         except (DjangoValidationError, IntegrityError, UserModel.DoesNotExist) as e:
