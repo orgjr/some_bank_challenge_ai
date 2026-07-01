@@ -3,18 +3,21 @@ from rest_framework.routers import DefaultRouter
 
 from account.views import AccountViewSet
 from business.views import BusinessViewSet
-from core.views import AuthViewSet, IndexApiView
+from core.views import AuthViewSet, IndexAPIView
 from person.views import PersonViewSet
-from transaction.views import TransactionViewSet
+from transaction.views import TransferViewSet
 
 router = DefaultRouter()
-router.register(r"auth", AuthViewSet, basename="authentication")
-router.register(r"transaction", TransactionViewSet, basename="transaction")
-router.register(r"person", PersonViewSet, basename="person")
+router.register(r"transfers", TransferViewSet, basename="transfer")
+router.register(r"accounts", AccountViewSet, basename="account")
+router.register(r"persons", PersonViewSet, basename="person")
 router.register(r"business", BusinessViewSet, basename="business")
-router.register(r"account", AccountViewSet, basename="account")
+
+auth_router = DefaultRouter()
+auth_router.register("", AuthViewSet, basename="authentication")
 
 urlpatterns = [
-    path("", IndexApiView.as_view(), name="index"),
+    path("", IndexAPIView.as_view(), name="index"),
     path("", include(router.urls)),
+    path("", include(auth_router.urls)),
 ]
