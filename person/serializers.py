@@ -25,8 +25,8 @@ class PersonSerializer(serializers.ModelSerializer):
 
         try:
             user_model = UserModel.objects.create_user(
-                email=validated_data["email"],
-                password=validated_data["password"],
+                email=validated_data["user"]["email"],
+                password=validated_data["user"]["password"],
                 client_type="person",
             )
 
