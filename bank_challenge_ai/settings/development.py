@@ -2,9 +2,9 @@ import os
 
 from .base import *  # noqa: F401,F403
 
-DEBUG = True
-
 ENV = "development"
+
+DEBUG = True
 
 SECRET_KEY = os.getenv("DEV_PROJECT_KEY", "dev-secret-key")
 
