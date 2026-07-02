@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from account.models import Account
-from account.serializers import AccountResponseSerializer
+from account.serializers import AccountCreationSerializer, AccountResponseSerializer
 from user.permissions import ENV_PERMISSION_CLASS
 
 
@@ -46,8 +46,11 @@ class AccountViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
         request=None,
     )
     def create(self, request):
-        client = request.user
-        account = Account.objects.create(client=client)
+        serializer = AccountCreationSerializer(
+            data=request.data, context={"user": request.user}
+        )
+        serializer.is_valid(raise_exception=True)
+        account = serializer.save()
 
         return Response(
             AccountResponseSerializer(account).data,
