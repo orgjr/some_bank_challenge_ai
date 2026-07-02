@@ -1,33 +1,37 @@
-from django.core.exceptions import ValidationError as DjangoValidationError
+import logging
+
 from django.db.models import F
 from django.db.transaction import atomic
-from rest_framework.exceptions import ValidationError
 
 from account.models import Account
 from transaction.models import Transaction
+
+logger = logging.getLogger(__name__)
 
 
 class RollbackService:
     ### challenge business rule
     @staticmethod
     @atomic
-    def rollback_due_to_inconsistency(validated_data):
+    def rollback_due_to_inconsistency(*, payer, payee, value):
         try:
-            transaction = Transaction(**validated_data)
+            rollback = Transaction(payer=payer, payee=payee, value=value)
 
-            payer = Account.objects.select_for_update().get(pk=transaction.payer.pk)
-            payee = Account.objects.select_for_update().get(pk=transaction.payee.pk)
+            payer = Account.objects.select_for_update().get(pk=rollback.payer.pk)
+            payee = Account.objects.select_for_update().get(pk=rollback.payee.pk)
 
             # payer
-            payer.balance = F("balance") + transaction.value
+            payer.balance = F("balance") + rollback.value
             payer.save(update_fields=["balance"])
 
             # payee
-            payee.balance = F("balance") - transaction.value
+            payee.balance = F("balance") - rollback.value
             payee.save(update_fields=["balance"])
 
-            transaction.refund = True
-            transaction.save()
+            rollback.refund = True
+            rollback.save()
 
-        except DjangoValidationError as e:
-            raise ValidationError(e)
+            return rollback
+        except Exception:
+            logger.exception({"Rollback failed"})
+            raise
