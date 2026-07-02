@@ -63,7 +63,7 @@ class UserManagerTest(TestCase):
         self.assertTrue(client.check_password("blabla12"))
         self.assertNotEqual(client.password, "blabla12")
 
-    def test_get_client_name_returns_related_person_or_business_name(self):
+    def test_get_name_returns_related_person_or_business_name(self):
         person_client = UserModel.objects.create_user(
             email="person@example.com", password="blabla12", client_type="person"
         )
@@ -74,16 +74,16 @@ class UserManagerTest(TestCase):
         from business.models import Business
         from person.models import Person
 
-        Person.objects.create(cpf="12345678901", name="Maria", user_model=person_client)
+        Person.objects.create(cpf="12345678901", name="Maria", user=person_client)
         Business.objects.create(
             cnpj="12345678000199",
             razao_social="Loja Teste LTDA",
             nome_fantasia="Loja Teste",
-            user_model=business_client,
+            user=business_client,
         )
 
-        self.assertEqual(person_client.get_client_name(), "Maria")
-        self.assertEqual(business_client.get_client_name(), "Loja Teste LTDA")
+        self.assertEqual(person_client.get_name(), "Maria")
+        self.assertEqual(business_client.get_name(), "Loja Teste LTDA")
 
     def test_reject_instances_with_create_method(self):
 

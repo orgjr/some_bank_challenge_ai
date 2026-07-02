@@ -35,7 +35,7 @@ class AccountTest(TestCase):
 
 class AccountApiTest(APITestCase):
     def test_create_account_requires_authentication(self):
-        response = self.client.post("/bank/account/", {}, format="json")
+        response = self.client.post("/api/v1/accounts/", {}, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
@@ -43,13 +43,11 @@ class AccountApiTest(APITestCase):
         client = UserModel.objects.create_user(
             email="user@example.com", password="blabla12", client_type="person"
         )
-        Person.objects.create(
-            cpf="12345678901", name="Usuario Teste", user_model=client
-        )
+        Person.objects.create(cpf="12345678901", name="Usuario Teste", user=client)
         self.client.force_authenticate(user=client)
 
-        response = self.client.post("/bank/account/", {}, format="json")
+        response = self.client.post("/api/v1/accounts/", {}, format="json")
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn("Usuario Teste", response.data["account"])
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIn("Usuario Teste", response.data["client"])
         self.assertTrue(Account.objects.filter(client=client).exists())

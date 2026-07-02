@@ -11,9 +11,9 @@ from account.models import Account
 from business.models import Business
 from person.models import Person
 from transaction.models import Transaction
-from transaction.serializers import TransferSerializer
+from transaction.serializers import CreateTransferSerializer
 from transaction.services.rollback_service import RollbackService
-from transaction.services.transfer_service import TransferService
+from transaction.services.transfer_processor import TransferProcessor
 from user.models import UserModel
 
 
@@ -27,7 +27,7 @@ def create_person_account(
     client = UserModel.objects.create_user(
         email=email, password="blabla12", client_type="person"
     )
-    Person.objects.create(cpf=cpf, name=name, user_model=client)
+    Person.objects.create(cpf=cpf, name=name, user=client)
     account = Account.objects.create(client=client, number=number, balance=balance)
     return client, account
 
@@ -46,17 +46,19 @@ def create_business_account(
         cnpj=cnpj,
         razao_social=razao_social,
         nome_fantasia=razao_social,
-        user_model=client,
+        user=client,
     )
     account = Account.objects.create(client=client, number=number, balance=balance)
     return client, account
 
 
-class TransferSerializerTest(TestCase):
+class CreateTransferSerializerTest(TestCase):
     def test_valid_payload_returns_payee_account_and_value(self):
         _, payee = create_person_account()
 
-        serializer = TransferSerializer(data={"value": "10.50", "payee": payee.number})
+        serializer = CreateTransferSerializer(
+            data={"value": "10.50", "payee": payee.number}
+        )
 
         self.assertTrue(serializer.is_valid(), serializer.errors)
         data = serializer.validated_data
@@ -64,26 +66,26 @@ class TransferSerializerTest(TestCase):
         self.assertEqual(data["value"], Decimal("10.50"))
 
     def test_rejects_non_numeric_value(self):
-        serializer = TransferSerializer(data={"value": "abc", "payee": 1000001})
+        serializer = CreateTransferSerializer(data={"value": "abc", "payee": 1000001})
 
         self.assertFalse(serializer.is_valid())
         self.assertIn("value", serializer.errors)
 
     def test_rejects_invalid_payee_number_format(self):
-        serializer = TransferSerializer(data={"value": "10.00", "payee": "abc"})
+        serializer = CreateTransferSerializer(data={"value": "10.00", "payee": "abc"})
 
         self.assertFalse(serializer.is_valid())
         self.assertIn("payee", serializer.errors)
 
     def test_rejects_missing_required_fields(self):
-        serializer = TransferSerializer(data={})
+        serializer = CreateTransferSerializer(data={})
 
         self.assertFalse(serializer.is_valid())
         self.assertIn("value", serializer.errors)
         self.assertIn("payee", serializer.errors)
 
     def test_rejects_unknown_payee_account(self):
-        serializer = TransferSerializer(data={"value": "10.00", "payee": 9999999})
+        serializer = CreateTransferSerializer(data={"value": "10.00", "payee": 9999999})
 
         self.assertFalse(serializer.is_valid())
         self.assertIn("payee", serializer.errors)
@@ -92,7 +94,7 @@ class TransferSerializerTest(TestCase):
 
 class TransferServiceTest(TestCase):
     @patch(
-        "transaction.services.transfer_service.AuthorizationService.authorization_service_request"
+        "transaction.services.transfer_processor.AuthorizationService.authorization_service_request"
     )
     def test_transfer_moves_balance_and_creates_transaction(self, mock_authorization):
         _, payer = create_person_account(balance=Decimal("100.00"))
@@ -104,9 +106,7 @@ class TransferServiceTest(TestCase):
             balance=Decimal("40.00"),
         )
 
-        TransferService.execute_transfer(
-            {"payer": payer, "payee": payee, "value": Decimal("25.50")}
-        )
+        TransferProcessor.process(payer=payer, payee=payee, value=Decimal("25.50"))
 
         payer.refresh_from_db()
         payee.refresh_from_db()
@@ -117,7 +117,7 @@ class TransferServiceTest(TestCase):
         mock_authorization.assert_called_once()
 
     @patch(
-        "transaction.services.transfer_service.AuthorizationService.authorization_service_request"
+        "transaction.services.transfer_processor.AuthorizationService.authorization_service_request"
     )
     def test_transfer_rejects_business_as_payer(self, mock_authorization):
         _, payer = create_business_account()
@@ -131,13 +131,11 @@ class TransferServiceTest(TestCase):
             ValidationError,
             str({"payer": ["business can not make transfer transactions"]}),
         ):
-            TransferService.execute_transfer(
-                {"payer": payer, "payee": payee, "value": Decimal("10.00")}
-            )
+            TransferProcessor.process(payer=payer, payee=payee, value=Decimal("10.00"))
         mock_authorization.assert_called_once()
 
     @patch(
-        "transaction.services.transfer_service.AuthorizationService.authorization_service_request"
+        "transaction.services.transfer_processor.AuthorizationService.authorization_service_request"
     )
     def test_transfer_rejects_insufficient_balance(self, mock_authorization):
         _, payer = create_person_account(balance=Decimal("9.99"))
@@ -150,13 +148,11 @@ class TransferServiceTest(TestCase):
         with self.assertRaisesMessage(
             ValidationError, str({"payer": ["insuficient founds"]})
         ):
-            TransferService.execute_transfer(
-                {"payer": payer, "payee": payee, "value": Decimal("10.00")}
-            )
+            TransferProcessor.process(payer=payer, payee=payee, value=Decimal("10.00"))
         mock_authorization.assert_called_once()
 
     @patch(
-        "transaction.services.transfer_service.AuthorizationService.authorization_service_request"
+        "transaction.services.transfer_processor.AuthorizationService.authorization_service_request"
     )
     def test_transfer_rejects_same_account(self, mock_authorization):
         _, payer = create_person_account(balance=Decimal("100.00"))
@@ -164,9 +160,7 @@ class TransferServiceTest(TestCase):
         with self.assertRaisesMessage(
             ValidationError, str({"transfer": ["cant transfer to same account"]})
         ):
-            TransferService.execute_transfer(
-                {"payer": payer, "payee": payer, "value": Decimal("10.00")}
-            )
+            TransferProcessor.process(payer=payer, payee=payer, value=Decimal("10.00"))
         mock_authorization.assert_called_once()
 
 
@@ -181,7 +175,7 @@ class RollbackServiceTest(TestCase):
         )
 
         RollbackService.rollback_due_to_inconsistency(
-            {"payer": payer, "payee": payee, "value": Decimal("25.00")}
+            payer=payer, payee=payee, value=Decimal("25.00")
         )
 
         payer.refresh_from_db()
@@ -205,7 +199,7 @@ class TransactionApiTest(APITestCase):
 
     def test_transfer_requires_authentication(self):
         response = self.client.post(
-            "/bank/transaction/transfer/",
+            "/api/v1/transfers/",
             {"value": "10.00", "payee": self.payee.number},
             format="json",
         )
@@ -223,18 +217,20 @@ class TransactionApiTest(APITestCase):
         self.client.force_authenticate(user=self.payer_client)
 
         response = self.client.post(
-            "/bank/transaction/transfer/",
+            "/api/v1/transfers/",
             {"value": "25.00", "payee": self.payee.number},
             format="json",
         )
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(
-            response.data["transfer"],
+            response.data,
             {
-                "value": Decimal("25.00"),
-                "payer": "Usuario Teste",
-                "payee": "Favorecido",
+                "value": "25.00",
+                "payer": "user@example.com",
+                "payee": "payee@example.com",
+                "transaction_type": "transfer",
+                "operation_date": response.data["operation_date"],
             },
         )
         self.payer.refresh_from_db()
@@ -245,7 +241,7 @@ class TransactionApiTest(APITestCase):
         mock_get.assert_called_once()
         mock_post.assert_called_once()
 
-    @patch("transaction.services.transfer_service.logger.exception")
+    @patch("transaction.services.transfer_processor.logger.exception")
     @patch("transaction.services.authorization_service.requests.get")
     def test_transfer_endpoint_rejects_when_authorization_fails(
         self, mock_get, mock_logger_exception
@@ -257,7 +253,7 @@ class TransactionApiTest(APITestCase):
         self.client.force_authenticate(user=self.payer_client)
 
         response = self.client.post(
-            "/bank/transaction/transfer/",
+            "/api/v1/transfers/",
             {"value": "25.00", "payee": self.payee.number},
             format="json",
         )
@@ -278,7 +274,7 @@ class TransactionApiTest(APITestCase):
         self.client.force_authenticate(user=self.payer_client)
 
         response = self.client.post(
-            "/bank/transaction/transfer/",
+            "/api/v1/transfers/",
             {"value": "1000.00", "payee": self.payee.number},
             format="json",
         )
