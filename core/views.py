@@ -24,7 +24,7 @@ from core.serializers import (
 class IndexAPIView(APIView):
     @extend_schema(
         summary="API index",
-        description="Returns general information about the API, including its version and the available documentation and health check endpoints.",
+        description="Returns general information about the API, including its version and the available documentation and health check endpoints",
         tags=["Index"],
         request=None,
         responses={200: IndexResponseSerializer},
@@ -33,7 +33,7 @@ class IndexAPIView(APIView):
         data = {
             "name": "Bank Challenge API",
             "version": "0.9.0",
-            "description": "A portfolio project inspired by a coding challenge from a leading digital bank.",
+            "description": "A portfolio project inspired by a coding challenge from a leading digital bank",
             "environment": settings.ENV,
             "documentation": "/api/docs/",
             "health": "/health/",
@@ -44,7 +44,7 @@ class IndexAPIView(APIView):
 class HealthCheckAPIView(APIView):
     @extend_schema(
         summary="Check system status",
-        description="Returns the current system status, including the server timestamp and application uptime. This endpoint can be used as a health check.",
+        description="Returns the current system status, including the server timestamp and application uptime. This endpoint can be used as a health check",
         tags=["Health"],
         request=None,
         responses={200: HealthResponseSerializer},
@@ -63,7 +63,7 @@ class HealthCheckAPIView(APIView):
 class AuthViewSet(ViewSet):
     @extend_schema(
         summary="Authenticate user",
-        description="Authenticates a registered user using their email address and password and starts a new session.",
+        description="Authenticates a registered user using their email address and password and starts a new session",
         tags=["Login"],
         request=AuthSerializer,
         responses={200: LoginResponseSerializer},
@@ -79,14 +79,14 @@ class AuthViewSet(ViewSet):
         return Response(
             {
                 "status": "success",
-                "message": "Successfully logged in.",
+                "message": "Successfully logged in",
             },
             status=status.HTTP_200_OK,
         )
 
     @extend_schema(
         summary="Log out",
-        description="Ends the current authenticated user's session.",
+        description="Ends the current authenticated user's session",
         tags=["Logout"],
         request=None,
         responses={204: None},
