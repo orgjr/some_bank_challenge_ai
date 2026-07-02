@@ -35,8 +35,8 @@ class IndexAPIView(APIView):
             "version": "0.9.0",
             "description": "A portfolio project inspired by a coding challenge from a leading digital bank",
             "environment": settings.ENV,
-            "documentation": "/api/docs/",
-            "health": "/health/",
+            "documentation": "/api/v1/docs/",
+            "health": "/api/v1/health/",
         }
         return Response(data, status=status.HTTP_200_OK)
 
