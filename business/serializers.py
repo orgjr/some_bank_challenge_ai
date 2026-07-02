@@ -16,15 +16,12 @@ class BusinessSerializer(serializers.ModelSerializer):
         fields = ["user", "cnpj", "razao_social", "nome_fantasia"]
         extra_kwargs = {
             "cnpj": {
-                "example": "12345678901234",
                 "help_text": "Brazilian company identifier (CNPJ)",
             },
             "razao_social": {
-                "example": "Razao Social Example",
                 "help_text": "Legal company name",
             },
             "nome_fantasia": {
-                "example": "Nome Fantasia Example",
                 "help_text": "Trade name / brand name",
             },
         }
