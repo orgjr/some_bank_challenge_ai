@@ -4,6 +4,7 @@ from datetime import datetime
 from django.conf import settings
 from django.contrib.auth import login, logout
 from django.utils import timezone
+from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -11,22 +12,62 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ViewSet
 
-from core.serializers import AuthSerializer
+from core.serializers import (
+    AuthSerializer,
+    HealthResponseSerializer,
+    IndexResponseSerializer,
+    LoginResponseSerializer,
+)
 
 
 # Create your views here.
-class IndexApiView(APIView):
+class IndexAPIView(APIView):
+    @extend_schema(
+        summary="API index",
+        description="Returns general information about the API, including its version and the available documentation and health check endpoints.",
+        tags=["Index"],
+        request=None,
+        responses={200: IndexResponseSerializer},
+    )
+    def get(self, request):
+        data = {
+            "name": "Bank Challenge API",
+            "version": "0.9.0",
+            "description": "A portfolio project inspired by a coding challenge from a leading digital bank.",
+            "environment": settings.ENV,
+            "documentation": "/api/docs/",
+            "health": "/health/",
+        }
+        return Response(data, status=status.HTTP_200_OK)
+
+
+class HealthCheckAPIView(APIView):
+    @extend_schema(
+        summary="Check system status",
+        description="Returns the current system status, including the server timestamp and application uptime. This endpoint can be used as a health check.",
+        tags=["Health"],
+        request=None,
+        responses={200: HealthResponseSerializer},
+    )
     def get(self, request):
         return Response(
             {
                 "status": "ok",
                 "timestamp": timezone.make_aware(datetime.now()),
                 "uptime_seconds": int(time.time() - settings.START_TIME),
-            }
+            },
+            status=status.HTTP_200_OK,
         )
 
 
 class AuthViewSet(ViewSet):
+    @extend_schema(
+        summary="Authenticate user",
+        description="Authenticates a registered user using their email address and password and starts a new session.",
+        tags=["Login"],
+        request=AuthSerializer,
+        responses={200: LoginResponseSerializer},
+    )
     @action(detail=False, methods=["POST"])
     def login(self, request):
         serializer = AuthSerializer(data=request.data)
@@ -38,10 +79,18 @@ class AuthViewSet(ViewSet):
         return Response(
             {
                 "status": "success",
-                "message": "Login successfully",
-            }
+                "message": "Successfully logged in.",
+            },
+            status=status.HTTP_200_OK,
         )
 
+    @extend_schema(
+        summary="Log out",
+        description="Ends the current authenticated user's session.",
+        tags=["Logout"],
+        request=None,
+        responses={204: None},
+    )
     @action(detail=False, methods=["POST"], permission_classes=[IsAuthenticated])
     def logout(self, request):
         logout(request)
