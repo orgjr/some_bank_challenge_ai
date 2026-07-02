@@ -1,0 +1,5 @@
+# If the project is running in a production environment, you must send the sessionid cookie of an authenticated superuser to access the OpenAPI documentation.
+GET http://localhost:8000/api/v1/openapi/ HTTP/1.1
+Cookie: sessionid=fgaiqztyri7805y5q9hhmfr1py81psvg
+X-CSRFToken: EsOAjPE9duxT4ZL01qrGAoRHqtrEsBvv
+
