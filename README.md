@@ -9,6 +9,7 @@ Esta implementacao nao replica o contrato original de forma literal em todos os 
 - Python 3.13
 - Django 6
 - Django REST Framework
+- drf-spectacular
 - SQLite em ambiente local
 - Autenticacao por sessao do Django
 - Docker e Docker Compose para execucao em container
@@ -18,9 +19,9 @@ Esta implementacao nao replica o contrato original de forma literal em todos os 
 As configuracoes do Django ficam separadas no pacote `bank_challenge_ai/settings/`.
 
 - `base.py`: configuracoes comuns da aplicacao, apps instalados, middlewares, timezone, static files e modelo de usuario customizado.
-- `development.py`: configuracao para desenvolvimento local, com `DEBUG = True`, hosts locais e banco SQLite em `db.sqlite3`.
+- `development.py`: configuracao para desenvolvimento local, com `ENV = development`, `DEBUG = True`, hosts locais e banco SQLite em `db.sqlite3`.
 - `testing.py`: configuracao para testes, com banco SQLite em memoria, password hasher mais rapido e backend de e-mail em memoria.
-- `production.py`: configuracao esperada para producao, com `DEBUG = False`, `ALLOWED_HOSTS` via variavel de ambiente e banco PostgreSQL via variaveis `POSTGRES_*`.
+- `production.py`: configuracao esperada para producao, com `ENV = production`, `DEBUG = False`, `ALLOWED_HOSTS` via variavel de ambiente e banco PostgreSQL via variaveis `POSTGRES_*`.
 
 Para escolher o ambiente, defina a variavel `DJANGO_SETTINGS_MODULE`.
 
@@ -71,6 +72,8 @@ Campos principais:
 - `email`: unico.
 - `password`: armazenado com hash pelo Django.
 - `client_type`: `person` ou `business`.
+- `is_superuser`: identifica superusuário/administrador.
+- `is_active`: identifica usuário ativo/inativo.
 
 ### Person
 
@@ -80,7 +83,7 @@ Campos:
 
 - `name`
 - `cpf`: unico.
-- `user_model`: relacionamento 1:1 com `UserModel`.
+- `user`: relacionamento 1:1 com `UserModel`.
 
 ### Business
 
@@ -91,7 +94,7 @@ Campos:
 - `cnpj`: unico.
 - `razao_social`: unica.
 - `nome_fantasia`
-- `user_model`: relacionamento 1:1 com `UserModel`.
+- `user`: relacionamento 1:1 com `UserModel`.
 
 ### Account
 
@@ -125,13 +128,13 @@ Campos:
 Em desenvolvimento local:
 
 ```http
-http://127.0.0.1:8000/bank/
+http://127.0.0.1:8000/api/v1/
 ```
 
 Com Docker Compose:
 
 ```http
-http://localhost:8000/bank/
+http://localhost:8000/api/v1/
 ```
 
 ## Autenticacao
@@ -141,9 +144,11 @@ A API usa autenticacao por sessao. Para endpoints protegidos, primeiro faca logi
 ### Login
 
 ```http
-POST /bank/auth/login/
+POST /api/v1/login/
 Content-Type: application/json
+```
 
+```json
 {
   "email": "cliente@email.com",
   "password": "senha-segura"
@@ -155,7 +160,7 @@ Resposta:
 ```json
 {
   "status": "success",
-  "message": "Login successfully"
+  "message": "Successfully logged in"
 }
 ```
 
@@ -164,7 +169,7 @@ Resposta:
 Endpoint protegido.
 
 ```http
-POST /bank/auth/logout/
+POST /api/v1/logout/
 Content-Type: application/json
 ```
 
@@ -175,7 +180,7 @@ status 204 sem resposta
 ### Health check
 
 ```http
-GET /bank/
+GET /api/v1/health/
 ```
 
 Resposta:
@@ -191,12 +196,16 @@ Resposta:
 ### Criar usuario comum
 
 ```http
-POST /bank/person/
+POST /api/v1/persons/
 Content-Type: application/json
+```
 
+```json
 {
-  "email": "maria@email.com",
-  "password": "senha-segura",
+  "user": {
+    "email": "maria@email.com",
+    "password": "senha-segura"
+  },
   "cpf": "12345678901",
   "name": "Maria Silva"
 }
@@ -206,7 +215,11 @@ Resposta:
 
 ```json
 {
-  "user": "maria@email.com"
+  "user": {
+    "email": "maria@email.com"
+  },
+  "cpf": "12345678901",
+  "name": "Maria Silva"
 }
 ```
 
@@ -219,12 +232,16 @@ Validacoes importantes:
 ### Criar usuário empresarial
 
 ```http
-POST /bank/business/
+POST /api/v1/business/
 Content-Type: application/json
+```
 
+```json
 {
-  "email": "loja@email.com",
-  "password": "senha-segura",
+  "user": {
+    "email": "loja@email.com",
+    "password": "senha-segura"
+  },
   "cnpj": "12345678000199",
   "razao_social": "Loja Exemplo LTDA",
   "nome_fantasia": "Loja Exemplo"
@@ -235,7 +252,12 @@ Resposta:
 
 ```json
 {
-  "store": "loja@email.com"
+  "user": {
+    "email": "loja@email.com"
+  },
+  "cnpj": "12345678000199",
+  "razao_social": "Loja Exemplo LTDA",
+  "nome_fantasia": "Loja Exemplo"
 }
 ```
 
@@ -251,7 +273,7 @@ Validacoes importantes:
 Endpoint protegido. Cria uma conta para o cliente autenticado.
 
 ```http
-POST /bank/account/
+POST /api/v1/accounts/
 Content-Type: application/json
 ```
 
@@ -259,7 +281,10 @@ Resposta:
 
 ```json
 {
-  "account": "client: Maria Silva, ag: 1002 cc: 2134848"
+  "client": "Maria Silva",
+  "email": "maria@email.com",
+  "agency": "1002",
+  "number": "1234567"
 }
 ```
 
@@ -279,7 +304,9 @@ No desafio original, o contrato sugerido era:
 ```http
 POST /transfer
 Content-Type: application/json
+```
 
+```json
 {
   "value": 100.0,
   "payer": 4,
@@ -290,9 +317,11 @@ Content-Type: application/json
 Neste projeto, a proposta implementada e mais alinhada com uma sessao autenticada: o `payer` e inferido a partir do usuario logado, e o `payee` e informado pelo numero da conta de destino.
 
 ```http
-POST /bank/transaction/transfer/
+POST /api/v1/transfers/
 Content-Type: application/json
+```
 
+```json
 {
   "value": "100.00",
   "payee": "2134848"
@@ -306,10 +335,14 @@ Resposta:
   "transfer": {
     "value": "100.00",
     "payer": "Maria Silva",
-    "payee": "Loja Exemplo LTDA"
+    "payee": "Loja Exemplo LTDA",
+    "transaction_type": "transfer",
+    "operation_date": "2026-07-02T23:43:50.490Z"
   }
 }
 ```
+
+### Endpoints adicionais estão disponíveis na documentação do OpenAPI.
 
 Fluxo executado:
 
@@ -342,12 +375,13 @@ Possiveis erros de negocio:
 ## Observacoes tecnicas
 
 - O projeto usa `ViewSet` e actions do Django REST Framework.
-- A transferencia e feita pelo servico `TransferService` desacoplado do modelo `Transaction`, que executa as validacoes e a movimentacao de saldo.
+- A transferencia é orquestrada pelo servico `TransferProcessor` desacoplado do modelo `Transaction`, que aciona serviços de validação, autorização, movimentação de saldo, notificação e rollback que desfaz a operação se houver algum erro de processamento, restaurando o saldo das contas envolvidas.
 - O autorizador externo e chamado apos a criacao da transacao.
-- Se a transacao nao for autorizada a transação não é concluída e fica registrado em log a recusa e a resposta do serviço autorizador.
-- Se ocorrer algum erro no processamento da transação, o reembolso e feito pelo servico `RollbackService` que faz uma operacao inversa, estornando ao pagador e debitando do beneficiario. Uma flag 'refund=True' é registrada em operações de estorno. Os registros das duas transações são mantidos.
+- Se a transacao nao for autorizada a transação não é concluída e fica registrada em log a recusa e a resposta do serviço autorizador.
+- Se ocorrer algum erro no processamento da transação, o reembolso e feito pelo servico `RollbackService` que faz uma operacao inversa, estornando ao pagador e debitando do beneficiario. Uma flag 'refund=True' é registrada em operações de estorno. Os registros das duas transações são mantidos preservando o histórico de transações.
 - A notificacao externa é chamada depois da transferencia; falhas sao registradas, mas nao impedem a resposta de sucesso.
 - As operacoes de transferencia e rollback sao atomicas(transações completas), com protecao contra concorrencia(apenas uma por operação), garantindo que as transacoes sejam registradas de forma segura.
+- `RollbackService` foi inspirado no desafio de código proposto e implementado para reforçar o sistema de reembolso somente se a transferência ocorrer e o sistema lançar uma exceção. Em transações não autorizadas ou recusadas na validação, o client é informado da recusa e a transação é anulada. Se `RollbackService` for chamado, a transação recusada será registrada normalmente em seguida será feito o roolback, mantendo toda a operação no servidor sem expor mecanismos de recuperação internos ao client.
 
 ## Testes automatizados
 
@@ -392,7 +426,7 @@ python manage.py runserver
 Depois acesse:
 
 ```http
-http://127.0.0.1:8000/bank/
+http://127.0.0.1:8000/api/v1/
 ```
 
 ## Como executar com Docker
@@ -408,7 +442,7 @@ docker compose up --build
 Depois acesse:
 
 ```http
-http://localhost:8000/bank/
+http://localhost:8000/api/v1/
 ```
 
 Para rodar em segundo plano:
@@ -438,6 +472,28 @@ docker compose exec web python manage.py migrate
 
 O `compose.yaml` monta o diretorio do projeto em `/app`, entao alteracoes no codigo local ficam disponiveis no container durante o desenvolvimento.
 
+## Acesse a documentação OpenAPI
+
+Na configuração atual o acesso à documentação está protegido por configurações de ambiente. Se o deploy estiver configurado para produção `DJANGO_MODULE_SETTINGS=bank_challenge_ai.settings.production` a documentação fica restrita para acesso autorizado. Neste sistema, o usuário autorizado precisa ter a flag `is_superuser=True`. Neste caso, o superuser precisa estar logado e enviar `Cookie: sessionid` para que o sistema identifique o acesso autorizado.
+
+```http
+http://localhost:8000/api/v1/schema/
+```
+
+Resposta: faz o download do esquema OpenAPI em formato YAML.
+
+```http
+http://localhost:8000/api/v1/docs/
+```
+
+Resposta: exibe a interface do Swagger UI.
+
+```http
+http://localhost:8000/api/v1/redoc/
+```
+
+Resposta: exibe a interface do ReDoc.
+
 ## User roadmap
 
 ### Jornada atual
@@ -451,9 +507,9 @@ O `compose.yaml` monta o diretorio do projeto em `/app`, entao alteracoes no cod
 
 ### Proximas melhorias de produto
 
-- Consulta de saldo da propria conta.
-- Extrato de transacoes enviadas e recebidas.
-- Listagem de contas e detalhes da conta autenticada.
+- ~~Consulta de saldo da propria conta.~~
+- ~~Extrato de transacoes enviadas e recebidas.~~
+- ~~Listagem de contas e detalhes da conta autenticada.~~
 - Status detalhado de transferencia: autorizada, recusada, notificada, notificacao pendente.
 - Cadastro com validacao mais forte de CPF/CNPJ.
 - Politicas de limite por transacao, por dia e por tipo de cliente.
@@ -468,7 +524,7 @@ O `compose.yaml` monta o diretorio do projeto em `/app`, entao alteracoes no cod
 - ~~Conteinerizar a aplicacao com Docker e Docker Compose.~~
 - ~~Separar configuracoes por ambiente: desenvolvimento, teste e producao.~~
 - ~~Adicionar testes automatizados de unidade e integracao para as regras de negocio.~~
-- Criar documentacao OpenAPI/Swagger.
+- ~~Criar documentacao OpenAPI/Swagger.~~
 - Adicionar CI para lint, testes e migracoes.
 - Evoluir notificacoes para processamento assicrono.
 - Definir funcionalidades alimentadas por IA, como analise de risco de transacoes, categorizacao inteligente de movimentacoes, assistente de suporte e sugestoes de limite com base em comportamento.
