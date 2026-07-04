@@ -1,6 +1,6 @@
 # Bank Challenge AI
 
-API RESTful de uma carteira bancaria inspirada no desafio de um banco famoso que não quer ser identificado. O projeto implementa cadastro de usuarios comuns e lojistas, abertura de conta, autenticacao por sessao e fluxo de transferencia com validacoes de regra de negocio, autorizador externo e tentativa de notificacao ao recebedor.
+API RESTful de uma carteira bancaria inspirada no desafio de um banco digital conhecido. O projeto implementa cadastro de usuarios comuns e lojistas, abertura de conta, autenticacao por sessao e fluxo de transferencia com validacoes de regra de negocio, autorizador externo e tentativa de notificacao ao recebedor.
 
 Esta implementacao nao replica o contrato original de forma literal em todos os pontos, porque o projeto foi pensado para evoluir alem do desafio. Ainda assim, as regras centrais do desafio foram consideradas e estao refletidas no dominio atual.
 
