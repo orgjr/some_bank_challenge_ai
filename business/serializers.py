@@ -47,3 +47,19 @@ class BusinessSerializer(serializers.ModelSerializer):
             raise ValidationError(e)
 
         return business
+
+    def update(self, instance, validated_data):
+        user_data = validated_data.pop("user", None)
+        if user_data:
+            user = instance.user
+            if "email" in user_data:
+                user.email = user_data["email"]
+            if "password" in user_data:
+                user.set_password(user_data["password"])
+            user.save()
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        return instance

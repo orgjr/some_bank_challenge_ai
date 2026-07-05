@@ -15,8 +15,11 @@ class PersonSerializer(serializers.ModelSerializer):
         model = Person
         fields = ["user", "name", "cpf"]
         extra_kwargs = {
+            "name": {
+                "help_text": "Full name of the person",
+            },
             "cpf": {
-                "help_text": "Brazilian individual taxpayer identification number",
+                "help_text": "Brazilian individual taxpayer identification number (CPF)",
             },
         }
 
@@ -41,3 +44,19 @@ class PersonSerializer(serializers.ModelSerializer):
             raise ValidationError(e)
 
         return person
+
+    def update(self, instance, validated_data):
+        user_data = validated_data.pop("user", None)
+        if user_data:
+            user = instance.user
+            if "email" in user_data:
+                user.email = user_data["email"]
+            if "password" in user_data:
+                user.set_password(user_data["password"])
+            user.save()
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        return instance
