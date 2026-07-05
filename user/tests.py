@@ -1,6 +1,10 @@
 from django.core.exceptions import ValidationError
 from django.test import TestCase
+from rest_framework import status
+from rest_framework.test import APITestCase
 
+from business.models import Business
+from person.models import Person
 from user.models import UserModel
 
 
@@ -95,7 +99,7 @@ class UserManagerTest(TestCase):
     def test_reject_instances_marked_as_superuser_and_client(self):
         with self.assertRaisesMessage(
             ValidationError,
-            str({"__all__": ["Constraint “superuser_or_client” is violated."]}),
+            str({"__all__": ["Constraint \u201csuperuser_or_client\u201d is violated."]}),
         ):
             UserModel.objects.create_user(
                 email="user@example.com",
@@ -103,3 +107,43 @@ class UserManagerTest(TestCase):
                 is_superuser=True,
                 client_type="person",
             )
+
+
+class UserApiTest(APITestCase):
+    def test_get_user_me_requires_authentication(self):
+        response = self.client.get("/api/v1/users/me/")
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_get_user_me_person(self):
+        client = UserModel.objects.create_user(
+            email="user@example.com", password="blabla12", client_type="person"
+        )
+        Person.objects.create(cpf="12345678901", name="Usuario Teste", user=client)
+        self.client.force_authenticate(user=client)
+
+        response = self.client.get("/api/v1/users/me/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["user"]["email"], "user@example.com")
+        self.assertEqual(response.data["cpf"], "12345678901")
+        self.assertEqual(response.data["name"], "Usuario Teste")
+
+    def test_get_user_me_business(self):
+        client = UserModel.objects.create_user(
+            email="store@example.com", password="blabla12", client_type="business"
+        )
+        Business.objects.create(
+            cnpj="12345678000199",
+            razao_social="Loja Teste LTDA",
+            nome_fantasia="Loja Teste",
+            user=client,
+        )
+        self.client.force_authenticate(user=client)
+
+        response = self.client.get("/api/v1/users/me/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["user"]["email"], "store@example.com")
+        self.assertEqual(response.data["cnpj"], "12345678000199")
+        self.assertEqual(response.data["razao_social"], "Loja Teste LTDA")

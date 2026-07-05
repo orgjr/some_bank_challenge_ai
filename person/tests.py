@@ -133,3 +133,58 @@ class UserApiTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("cpf", response.data)
         self.assertIn("name", response.data)
+
+    def test_list_persons_endpoint(self):
+        response = self.client.get("/api/v1/persons/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_update_person_endpoint(self):
+        client = UserModel.objects.create_user(
+            email="user@example.com", password="blabla12", client_type="person"
+        )
+        person = Person.objects.create(
+            cpf="12345678901", name="Usuario Teste", user=client
+        )
+        response = self.client.put(
+            f"/api/v1/persons/{person.id}/",
+            {
+                "user": {"email": "user@example.com", "password": "blabla12"},
+                "cpf": "12345678901",
+                "name": "Updated Name",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        person.refresh_from_db()
+        self.assertEqual(person.name, "Updated Name")
+
+    def test_partial_update_person_endpoint(self):
+        client = UserModel.objects.create_user(
+            email="user@example.com", password="blabla12", client_type="person"
+        )
+        person = Person.objects.create(
+            cpf="12345678901", name="Usuario Teste", user=client
+        )
+        response = self.client.patch(
+            f"/api/v1/persons/{person.id}/",
+            {"name": "Partial Update"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        person.refresh_from_db()
+        self.assertEqual(person.name, "Partial Update")
+
+    def test_delete_person_endpoint(self):
+        client = UserModel.objects.create_user(
+            email="user@example.com", password="blabla12", client_type="person"
+        )
+        person = Person.objects.create(
+            cpf="12345678901", name="Usuario Teste", user=client
+        )
+        response = self.client.delete(f"/api/v1/persons/{person.id}/")
+
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Person.objects.filter(id=person.id).exists())

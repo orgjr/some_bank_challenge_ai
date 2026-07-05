@@ -197,6 +197,23 @@ class TransactionApiTest(APITestCase):
             balance=Decimal("40.00"),
         )
 
+    def test_list_transfers_endpoint(self):
+        response = self.client.get("/api/v1/transfers/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_get_own_transfers_requires_authentication(self):
+        response = self.client.get("/api/v1/transfers/me/")
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_get_own_transfers(self):
+        self.client.force_authenticate(user=self.payer_client)
+
+        response = self.client.get("/api/v1/transfers/me/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
     def test_transfer_requires_authentication(self):
         response = self.client.post(
             "/api/v1/transfers/",

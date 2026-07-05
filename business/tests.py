@@ -160,3 +160,68 @@ class StoreApiTest(APITestCase):
         self.assertIn("cnpj", response.data)
         self.assertIn("razao_social", response.data)
         self.assertIn("nome_fantasia", response.data)
+
+    def test_list_business_endpoint(self):
+        response = self.client.get("/api/v1/business/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_update_business_endpoint(self):
+        client = UserModel.objects.create_user(
+            email="store@example.com", password="blabla12", client_type="business"
+        )
+        business = Business.objects.create(
+            cnpj="12345678000199",
+            razao_social="Loja Teste LTDA",
+            nome_fantasia="Loja Teste",
+            user=client,
+        )
+        response = self.client.put(
+            f"/api/v1/business/{business.id}/",
+            {
+                "user": {"email": "store@example.com", "password": "blabla12"},
+                "cnpj": "12345678000199",
+                "razao_social": "Loja Teste LTDA",
+                "nome_fantasia": "Updated Name",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        business.refresh_from_db()
+        self.assertEqual(business.nome_fantasia, "Updated Name")
+
+    def test_partial_update_business_endpoint(self):
+        client = UserModel.objects.create_user(
+            email="store@example.com", password="blabla12", client_type="business"
+        )
+        business = Business.objects.create(
+            cnpj="12345678000199",
+            razao_social="Loja Teste LTDA",
+            nome_fantasia="Loja Teste",
+            user=client,
+        )
+        response = self.client.patch(
+            f"/api/v1/business/{business.id}/",
+            {"nome_fantasia": "Partial Update"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        business.refresh_from_db()
+        self.assertEqual(business.nome_fantasia, "Partial Update")
+
+    def test_delete_business_endpoint(self):
+        client = UserModel.objects.create_user(
+            email="store@example.com", password="blabla12", client_type="business"
+        )
+        business = Business.objects.create(
+            cnpj="12345678000199",
+            razao_social="Loja Teste LTDA",
+            nome_fantasia="Loja Teste",
+            user=client,
+        )
+        response = self.client.delete(f"/api/v1/business/{business.id}/")
+
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Business.objects.filter(id=business.id).exists())
