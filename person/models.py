@@ -6,8 +6,8 @@ from user.models import UserModel
 
 # Create your models here.
 class Person(models.Model):
-    cpf = models.CharField(max_length=11, unique=True)
-    name = models.CharField(max_length=128)
+    cpf = models.CharField(max_length=11, unique=True, help_text="Brazilian individual taxpayer identification number (CPF)")
+    name = models.CharField(max_length=128, help_text="Full name of the person")
     user = models.OneToOneField(
         UserModel, related_name="person", on_delete=models.CASCADE, default="user"
     )

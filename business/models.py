@@ -6,9 +6,9 @@ from user.models import UserModel
 
 # Create your models here.
 class Business(models.Model):
-    cnpj = models.CharField(max_length=14, unique=True)
-    razao_social = models.CharField(max_length=100, unique=True)
-    nome_fantasia = models.CharField(max_length=256)
+    cnpj = models.CharField(max_length=14, unique=True, help_text="Brazilian company identifier (CNPJ)")
+    razao_social = models.CharField(max_length=100, unique=True, help_text="Legal company name")
+    nome_fantasia = models.CharField(max_length=256, help_text="Trade name / brand name")
     user = models.OneToOneField(
         UserModel, related_name="business", on_delete=models.CASCADE, default="business"
     )
