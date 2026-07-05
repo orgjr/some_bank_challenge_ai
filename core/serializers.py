@@ -24,8 +24,8 @@ class LoginResponseSerializer(serializers.Serializer):
 
 
 class AuthSerializer(serializers.Serializer):
-    email = serializers.EmailField()
-    password = serializers.CharField(write_only=True)
+    email = serializers.EmailField(initial="user@example.com")
+    password = serializers.CharField(write_only=True, initial="your_password_123")
 
     def validate(self, data):
         user = authenticate(**data)

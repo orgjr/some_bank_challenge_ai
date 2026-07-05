@@ -1,4 +1,5 @@
 import logging
+from decimal import Decimal
 
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -13,11 +14,13 @@ class CreateTransferSerializer(serializers.Serializer):
     value = serializers.DecimalField(
         max_digits=8,
         decimal_places=2,
+        initial=Decimal("100.50"),
         error_messages={
             "invalid": "value must be numeric with a maximum of two places after the decimal point"
         },
     )
     payee = serializers.IntegerField(
+        initial=1000001,
         error_messages={"invalid": "payee must be a valid account number"},
     )
 
