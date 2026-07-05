@@ -1,5 +1,5 @@
 from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import PolymorphicProxySerializer, extend_schema
+from drf_spectacular.utils import OpenApiExample, OpenApiResponse, PolymorphicProxySerializer, extend_schema
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -23,11 +23,38 @@ class GetUserAPIView(APIView):
         ),
         tags=["Users"],
         request=None,
-        responses=PolymorphicProxySerializer(
-            component_name="UserProfile",
-            serializers=[PersonSerializer, BusinessSerializer],
-            resource_type_field_name=None,
-        ),
+        responses={
+            200: PolymorphicProxySerializer(
+                component_name="UserProfile",
+                serializers=[PersonSerializer, BusinessSerializer],
+                resource_type_field_name=None,
+            ),
+            403: OpenApiResponse(description="Not authenticated"),
+            404: OpenApiResponse(description="User profile not found"),
+        },
+        examples=[
+            OpenApiExample(
+                "Person user profile response",
+                summary="Example person profile response",
+                value={
+                    "user": {"email": "user@example.com"},
+                    "cpf": "12345678901",
+                    "name": "João Silva",
+                },
+                response_only=True,
+            ),
+            OpenApiExample(
+                "Business user profile response",
+                summary="Example business profile response",
+                value={
+                    "user": {"email": "store@example.com"},
+                    "cnpj": "12345678000199",
+                    "razao_social": "Empresa Exemplo LTDA",
+                    "nome_fantasia": "Empresa Exemplo",
+                },
+                response_only=True,
+            ),
+        ],
     )
     def get(self, request):
         if request.user.client_type == "person":

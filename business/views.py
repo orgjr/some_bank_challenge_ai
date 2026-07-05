@@ -1,4 +1,4 @@
-from drf_spectacular.utils import extend_schema, extend_schema_view
+from drf_spectacular.utils import OpenApiExample, OpenApiResponse, extend_schema, extend_schema_view
 from rest_framework.mixins import (
     CreateModelMixin,
     DestroyModelMixin,
@@ -24,11 +24,58 @@ from user.permissions import ENV_PERMISSION_CLASS
             "- Production: restricted to the superuser."
         ),
         tags=["Business"],
+        responses={
+            200: BusinessSerializer(many=True),
+            403: OpenApiResponse(description="Access denied in production environment"),
+        },
+        examples=[
+            OpenApiExample(
+                "Business list response",
+                summary="Example business list response",
+                value=[
+                    {
+                        "user": {"email": "store@example.com"},
+                        "cnpj": "12345678000199",
+                        "razao_social": "Empresa Exemplo LTDA",
+                        "nome_fantasia": "Empresa Exemplo",
+                    },
+                ],
+                response_only=True,
+            ),
+        ],
     ),
     create=extend_schema(
         summary="Create a Business user profile",
         description="Creates a new Business profile.",
         tags=["Business"],
+        responses={
+            201: BusinessSerializer,
+            400: OpenApiResponse(description="Validation error - invalid or missing fields"),
+        },
+        examples=[
+            OpenApiExample(
+                "Valid business creation",
+                summary="Example business creation request",
+                value={
+                    "user": {"email": "store@example.com", "password": "seguro123"},
+                    "cnpj": "12345678000199",
+                    "razao_social": "Empresa Exemplo LTDA",
+                    "nome_fantasia": "Empresa Exemplo",
+                },
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Business created response",
+                summary="Example business creation response",
+                value={
+                    "user": {"email": "store@example.com"},
+                    "cnpj": "12345678000199",
+                    "razao_social": "Empresa Exemplo LTDA",
+                    "nome_fantasia": "Empresa Exemplo",
+                },
+                response_only=True,
+            ),
+        ],
     ),
     update=extend_schema(
         summary="Update a Business profile",
@@ -39,6 +86,35 @@ from user.permissions import ENV_PERMISSION_CLASS
             "- Production: restricted to the superuser."
         ),
         tags=["Business"],
+        responses={
+            200: BusinessSerializer,
+            400: OpenApiResponse(description="Validation error - invalid or missing fields"),
+            404: OpenApiResponse(description="Business profile not found"),
+        },
+        examples=[
+            OpenApiExample(
+                "Valid business update",
+                summary="Example business update request",
+                value={
+                    "user": {"email": "store@example.com", "password": "nova_senha_456"},
+                    "cnpj": "12345678000199",
+                    "razao_social": "Empresa Exemplo LTDA",
+                    "nome_fantasia": "Nome Fantasia Atualizado",
+                },
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Business updated response",
+                summary="Example business update response",
+                value={
+                    "user": {"email": "store@example.com"},
+                    "cnpj": "12345678000199",
+                    "razao_social": "Empresa Exemplo LTDA",
+                    "nome_fantasia": "Nome Fantasia Atualizado",
+                },
+                response_only=True,
+            ),
+        ],
     ),
     partial_update=extend_schema(
         summary="Partially update a Business profile",
@@ -49,6 +125,32 @@ from user.permissions import ENV_PERMISSION_CLASS
             "- Production: restricted to the superuser."
         ),
         tags=["Business"],
+        responses={
+            200: BusinessSerializer,
+            400: OpenApiResponse(description="Validation error - invalid fields"),
+            404: OpenApiResponse(description="Business profile not found"),
+        },
+        examples=[
+            OpenApiExample(
+                "Partial business update",
+                summary="Example business partial update request",
+                value={
+                    "nome_fantasia": "Novo Nome Fantasia",
+                },
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Business partially updated response",
+                summary="Example business partial update response",
+                value={
+                    "user": {"email": "store@example.com"},
+                    "cnpj": "12345678000199",
+                    "razao_social": "Empresa Exemplo LTDA",
+                    "nome_fantasia": "Novo Nome Fantasia",
+                },
+                response_only=True,
+            ),
+        ],
     ),
     destroy=extend_schema(
         summary="Delete a Business profile",
@@ -59,6 +161,10 @@ from user.permissions import ENV_PERMISSION_CLASS
             "- Production: restricted to the superuser."
         ),
         tags=["Business"],
+        responses={
+            204: None,
+            404: OpenApiResponse(description="Business profile not found"),
+        },
     ),
 )
 class BusinessViewSet(

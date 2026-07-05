@@ -1,5 +1,5 @@
 from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiExample, OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.mixins import CreateModelMixin, ListModelMixin
@@ -26,6 +26,24 @@ class AccountViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
         summary="Retrieve authenticated user's account",
         description="Returns the account information associated with the authenticated user.",
         tags=["Accounts"],
+        responses={
+            200: AccountResponseSerializer,
+            403: OpenApiResponse(description="Not authenticated"),
+            404: OpenApiResponse(description="Account not found for the authenticated user"),
+        },
+        examples=[
+            OpenApiExample(
+                "Account response",
+                summary="Example account response",
+                value={
+                    "client": "João Silva",
+                    "email": "user@example.com",
+                    "agency": "1002",
+                    "number": "1000001",
+                },
+                response_only=True,
+            ),
+        ],
     )
     @action(detail=False, methods=["GET"])
     def me(self, request):
@@ -44,6 +62,31 @@ class AccountViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
         ),
         tags=["Accounts"],
         request=None,
+        responses={
+            201: AccountResponseSerializer,
+            400: OpenApiResponse(description="Validation error - customer already has an active account"),
+            403: OpenApiResponse(description="Not authenticated"),
+        },
+        examples=[
+            OpenApiExample(
+                "Empty body",
+                summary="Example account creation request",
+                description="The request body is empty; the account is auto-generated.",
+                value={},
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Account created response",
+                summary="Example account creation response",
+                value={
+                    "client": "João Silva",
+                    "email": "user@example.com",
+                    "agency": "1002",
+                    "number": "1234567",
+                },
+                response_only=True,
+            ),
+        ],
     )
     def create(self, request):
         serializer = AccountCreationSerializer(
@@ -66,6 +109,25 @@ class AccountViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
             "- Production: restricted to the superuser."
         ),
         tags=["Accounts"],
+        responses={
+            200: AccountResponseSerializer(many=True),
+            403: OpenApiResponse(description="Access denied in production environment"),
+        },
+        examples=[
+            OpenApiExample(
+                "Account list response",
+                summary="Example account list response",
+                value=[
+                    {
+                        "client": "João Silva",
+                        "email": "user@example.com",
+                        "agency": "1002",
+                        "number": "1000001",
+                    },
+                ],
+                response_only=True,
+            ),
+        ],
     )
     def list(self, request, *args, **kwargs):
         accounts = Account.objects.all().order_by("-created_at")

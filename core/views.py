@@ -4,7 +4,7 @@ from datetime import datetime
 from django.conf import settings
 from django.contrib.auth import login, logout
 from django.utils import timezone
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiExample, OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -28,6 +28,21 @@ class IndexAPIView(APIView):
         tags=["Index"],
         request=None,
         responses={200: IndexResponseSerializer},
+        examples=[
+            OpenApiExample(
+                "Index response",
+                summary="Example index response",
+                value={
+                    "name": "Bank Challenge API",
+                    "version": "0.9.0",
+                    "description": "A portfolio project inspired by a coding challenge from a leading digital bank",
+                    "environment": "development",
+                    "documentation": "/api/v1/docs/",
+                    "health": "/api/v1/health/",
+                },
+                response_only=True,
+            ),
+        ],
     )
     def get(self, request):
         data = {
@@ -48,6 +63,18 @@ class HealthCheckAPIView(APIView):
         tags=["Health"],
         request=None,
         responses={200: HealthResponseSerializer},
+        examples=[
+            OpenApiExample(
+                "Health response",
+                summary="Example health check response",
+                value={
+                    "status": "ok",
+                    "timestamp": "2024-01-15T10:30:00Z",
+                    "uptime_seconds": 3600,
+                },
+                response_only=True,
+            ),
+        ],
     )
     def get(self, request):
         return Response(
@@ -66,7 +93,27 @@ class AuthViewSet(ViewSet):
         description="Authenticates a registered user using their email address and password and starts a new session",
         tags=["Login"],
         request=AuthSerializer,
-        responses={200: LoginResponseSerializer},
+        responses={
+            200: LoginResponseSerializer,
+            400: OpenApiResponse(description="Invalid email or password"),
+        },
+        examples=[
+            OpenApiExample(
+                "Valid login",
+                summary="Example login request",
+                value={"email": "user@example.com", "password": "your_password_123"},
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Login success response",
+                summary="Example login success response",
+                value={
+                    "status": "success",
+                    "message": "Successfully logged in",
+                },
+                response_only=True,
+            ),
+        ],
     )
     @action(detail=False, methods=["POST"])
     def login(self, request):
@@ -89,7 +136,10 @@ class AuthViewSet(ViewSet):
         description="Ends the current authenticated user's session",
         tags=["Logout"],
         request=None,
-        responses={204: None},
+        responses={
+            204: None,
+            403: OpenApiResponse(description="Not authenticated"),
+        },
     )
     @action(detail=False, methods=["POST"], permission_classes=[IsAuthenticated])
     def logout(self, request):

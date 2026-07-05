@@ -1,4 +1,4 @@
-from drf_spectacular.utils import extend_schema, extend_schema_view
+from drf_spectacular.utils import OpenApiExample, OpenApiResponse, extend_schema, extend_schema_view
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.mixins import CreateModelMixin, ListModelMixin
@@ -23,6 +23,26 @@ from user.permissions import ENV_PERMISSION_CLASS
             "- Production: restricted to the superuser."
         ),
         tags=["Transfers"],
+        responses={
+            200: ResponseTransferSerializer(many=True),
+            403: OpenApiResponse(description="Access denied in production environment"),
+        },
+        examples=[
+            OpenApiExample(
+                "Transfer list response",
+                summary="Example transfer list response",
+                value=[
+                    {
+                        "value": "100.00",
+                        "payer": "user@example.com",
+                        "payee": "payee@example.com",
+                        "transaction_type": "transfer",
+                        "operation_date": "2024-01-15T10:30:00Z",
+                    },
+                ],
+                response_only=True,
+            ),
+        ],
     )
 )
 class TransferViewSet(GenericViewSet, CreateModelMixin, ListModelMixin):
@@ -49,7 +69,31 @@ class TransferViewSet(GenericViewSet, CreateModelMixin, ListModelMixin):
             "with the system's business rules."
         ),
         tags=["Transfers"],
-        responses={201: ResponseTransferSerializer},
+        responses={
+            201: ResponseTransferSerializer,
+            400: OpenApiResponse(description="Validation error - invalid data, insufficient funds, or unauthorized transaction"),
+            403: OpenApiResponse(description="Not authenticated"),
+        },
+        examples=[
+            OpenApiExample(
+                "Valid transfer",
+                summary="Example transfer request",
+                value={"value": "100.50", "payee": 1000001},
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Transfer created response",
+                summary="Example transfer creation response",
+                value={
+                    "value": "100.50",
+                    "payer": "user@example.com",
+                    "payee": "payee@example.com",
+                    "transaction_type": "transfer",
+                    "operation_date": "2024-01-15T10:30:00Z",
+                },
+                response_only=True,
+            ),
+        ],
     )
     def create(self, request):
         payer = request.user
@@ -71,7 +115,26 @@ class TransferViewSet(GenericViewSet, CreateModelMixin, ListModelMixin):
         description="Returns all transactions performed by the authenticated user. Currently, only transfer transactions are supported.",
         tags=["Transfers"],
         request=None,
-        responses={200: ResponseTransferSerializer(many=True)},
+        responses={
+            200: ResponseTransferSerializer(many=True),
+            403: OpenApiResponse(description="Not authenticated"),
+        },
+        examples=[
+            OpenApiExample(
+                "User transfers response",
+                summary="Example user transfers response",
+                value=[
+                    {
+                        "value": "25.00",
+                        "payer": "user@example.com",
+                        "payee": "payee@example.com",
+                        "transaction_type": "transfer",
+                        "operation_date": "2024-01-15T10:30:00Z",
+                    },
+                ],
+                response_only=True,
+            ),
+        ],
     )
     @action(detail=False, methods=["GET"])
     def me(self, request):
