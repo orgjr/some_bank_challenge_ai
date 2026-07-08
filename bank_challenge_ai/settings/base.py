@@ -91,6 +91,50 @@ SPECTACULAR_SETTINGS = {
     "SWAGGER_UI_DIST": "SIDECAR",
     "SWAGGER_UI_FAVICON_HREF": "SIDECAR",
     "REDOC_DIST": "SIDECAR",
+    "TAGS": [
+        {
+            "name": "Index",
+            "description": "General API information, version, and available endpoints.",
+        },
+        {
+            "name": "Health",
+            "description": "System health check and monitoring endpoint.",
+        },
+        {
+            "name": "Login",
+            "description": "Session-based user authentication.",
+        },
+        {
+            "name": "Logout",
+            "description": "Session termination for authenticated users.",
+        },
+        {
+            "name": "Accounts",
+            "description": "Bank account management — creation, retrieval, and listing of accounts.",
+        },
+        {
+            "name": "Business",
+            "description": "CRUD operations for business user profiles.",
+        },
+        {
+            "name": "Persons",
+            "description": "CRUD operations for person (individual) user profiles.",
+        },
+        {
+            "name": "Transfers",
+            "description": "Money transfers between accounts and transaction history.",
+        },
+        {
+            "name": "Users",
+            "description": "Authenticated user profile retrieval.",
+        },
+    ],
+    "CONTACT": {
+        "name": "Osmar Garcia",
+        "email": "osmar.rgj@gmail.com",
+        "url": "https://github.com/orgjr",
+    },
+    "LICENSE": {"name": "MIT"},
 }
 
 LANGUAGE_CODE = "en-us"
