@@ -31,6 +31,7 @@ from user.permissions import ENV_PERMISSION_CLASS
             OpenApiExample(
                 "Transfer list response",
                 summary="Example transfer list response",
+                description="Paginated list of all transfers with value, payer, payee, transaction type and operation date.",
                 value=[
                     {
                         "value": "100.00",
@@ -78,12 +79,14 @@ class TransferViewSet(GenericViewSet, CreateModelMixin, ListModelMixin):
             OpenApiExample(
                 "Valid transfer",
                 summary="Example transfer request",
+                description="Request payload with the transfer value and the beneficiary account number.",
                 value={"value": "100.50", "payee": 1000001},
                 request_only=True,
             ),
             OpenApiExample(
                 "Transfer created response",
                 summary="Example transfer creation response",
+                description="Response confirming the transfer was processed, with value, payer email, payee email, transaction type and timestamp.",
                 value={
                     "value": "100.50",
                     "payer": "user@example.com",
@@ -123,6 +126,7 @@ class TransferViewSet(GenericViewSet, CreateModelMixin, ListModelMixin):
             OpenApiExample(
                 "User transfers response",
                 summary="Example user transfers response",
+                description="List of all transfers performed by the authenticated user, with value, payer, payee, transaction type and date.",
                 value=[
                     {
                         "value": "25.00",

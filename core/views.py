@@ -32,6 +32,7 @@ class IndexAPIView(APIView):
             OpenApiExample(
                 "Index response",
                 summary="Example index response",
+                description="Response with general API information including name, version, environment, and links to documentation and health check.",
                 value={
                     "name": "Bank Challenge API",
                     "version": "0.9.0",
@@ -67,6 +68,7 @@ class HealthCheckAPIView(APIView):
             OpenApiExample(
                 "Health response",
                 summary="Example health check response",
+                description="Response indicating the system is healthy, with current timestamp and uptime in seconds.",
                 value={
                     "status": "ok",
                     "timestamp": "2024-01-15T10:30:00Z",
@@ -101,12 +103,14 @@ class AuthViewSet(ViewSet):
             OpenApiExample(
                 "Valid login",
                 summary="Example login request",
+                description="Request payload with email and password to authenticate a registered user.",
                 value={"email": "user@example.com", "password": "your_password_123"},
                 request_only=True,
             ),
             OpenApiExample(
                 "Login success response",
                 summary="Example login success response",
+                description="Response confirming the user was successfully authenticated and a session was started.",
                 value={
                     "status": "success",
                     "message": "Successfully logged in",

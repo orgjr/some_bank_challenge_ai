@@ -32,6 +32,7 @@ from user.permissions import ENV_PERMISSION_CLASS
             OpenApiExample(
                 "Person list response",
                 summary="Example person list response",
+                description="Paginated list of all registered person profiles with email, CPF and full name.",
                 value=[
                     {
                         "user": {"email": "joao@example.com"},
@@ -55,6 +56,7 @@ from user.permissions import ENV_PERMISSION_CLASS
             OpenApiExample(
                 "Valid person creation",
                 summary="Example person creation request",
+                description="Request payload containing user credentials, CPF and full name to create a new person profile.",
                 value={
                     "user": {"email": "joao@example.com", "password": "seguro123"},
                     "cpf": "12345678901",
@@ -65,6 +67,7 @@ from user.permissions import ENV_PERMISSION_CLASS
             OpenApiExample(
                 "Person created response",
                 summary="Example person creation response",
+                description="Response confirming the person profile was created, returning the registered data without the password.",
                 value={
                     "user": {"email": "joao@example.com"},
                     "cpf": "12345678901",
@@ -92,6 +95,7 @@ from user.permissions import ENV_PERMISSION_CLASS
             OpenApiExample(
                 "Valid person update",
                 summary="Example person update request",
+                description="Request payload with all fields to fully replace an existing person profile.",
                 value={
                     "user": {"email": "joao@example.com", "password": "nova_senha_456"},
                     "cpf": "12345678901",
@@ -102,6 +106,7 @@ from user.permissions import ENV_PERMISSION_CLASS
             OpenApiExample(
                 "Person updated response",
                 summary="Example person update response",
+                description="Response containing the updated person profile data after a successful full update.",
                 value={
                     "user": {"email": "joao@example.com"},
                     "cpf": "12345678901",
@@ -129,6 +134,7 @@ from user.permissions import ENV_PERMISSION_CLASS
             OpenApiExample(
                 "Partial person update",
                 summary="Example person partial update request",
+                description="Request payload with only the fields to be partially updated (e.g., name only).",
                 value={
                     "name": "Nome Parcialmente Atualizado",
                 },
@@ -137,6 +143,7 @@ from user.permissions import ENV_PERMISSION_CLASS
             OpenApiExample(
                 "Person partially updated response",
                 summary="Example person partial update response",
+                description="Response containing the person profile with only the modified fields updated, other fields remain unchanged.",
                 value={
                     "user": {"email": "joao@example.com"},
                     "cpf": "12345678901",

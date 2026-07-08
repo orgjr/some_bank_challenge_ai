@@ -36,6 +36,7 @@ class GetUserAPIView(APIView):
             OpenApiExample(
                 "Person user profile response",
                 summary="Example person profile response",
+                description="Response containing the authenticated person user's email, CPF and full name.",
                 value={
                     "user": {"email": "user@example.com"},
                     "cpf": "12345678901",
@@ -46,6 +47,7 @@ class GetUserAPIView(APIView):
             OpenApiExample(
                 "Business user profile response",
                 summary="Example business profile response",
+                description="Response containing the authenticated business user's email, CNPJ, legal name and trade name.",
                 value={
                     "user": {"email": "store@example.com"},
                     "cnpj": "12345678000199",

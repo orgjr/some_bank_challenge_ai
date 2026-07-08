@@ -35,6 +35,7 @@ class AccountViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
             OpenApiExample(
                 "Account response",
                 summary="Example account response",
+                description="Response containing the authenticated user's account details: client name, email, agency and account number.",
                 value={
                     "client": "João Silva",
                     "email": "user@example.com",
@@ -78,6 +79,7 @@ class AccountViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
             OpenApiExample(
                 "Account created response",
                 summary="Example account creation response",
+                description="Response containing the newly created account details: client name, email, agency and generated account number.",
                 value={
                     "client": "João Silva",
                     "email": "user@example.com",
@@ -117,6 +119,7 @@ class AccountViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
             OpenApiExample(
                 "Account list response",
                 summary="Example account list response",
+                description="Paginated list of all registered accounts with client name, email, agency and account number.",
                 value=[
                     {
                         "client": "João Silva",

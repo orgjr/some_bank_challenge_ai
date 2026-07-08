@@ -32,6 +32,7 @@ from user.permissions import ENV_PERMISSION_CLASS
             OpenApiExample(
                 "Business list response",
                 summary="Example business list response",
+                description="Paginated list of all registered business profiles with user email, CNPJ, legal name and trade name.",
                 value=[
                     {
                         "user": {"email": "store@example.com"},
@@ -56,6 +57,7 @@ from user.permissions import ENV_PERMISSION_CLASS
             OpenApiExample(
                 "Valid business creation",
                 summary="Example business creation request",
+                description="Request payload containing user credentials, CNPJ, legal name and trade name to create a new business profile.",
                 value={
                     "user": {"email": "store@example.com", "password": "seguro123"},
                     "cnpj": "12345678000199",
@@ -67,6 +69,7 @@ from user.permissions import ENV_PERMISSION_CLASS
             OpenApiExample(
                 "Business created response",
                 summary="Example business creation response",
+                description="Response confirming the business profile was created, returning the registered data without the password.",
                 value={
                     "user": {"email": "store@example.com"},
                     "cnpj": "12345678000199",
@@ -95,6 +98,7 @@ from user.permissions import ENV_PERMISSION_CLASS
             OpenApiExample(
                 "Valid business update",
                 summary="Example business update request",
+                description="Request payload with all fields to fully replace an existing business profile.",
                 value={
                     "user": {"email": "store@example.com", "password": "nova_senha_456"},
                     "cnpj": "12345678000199",
@@ -106,6 +110,7 @@ from user.permissions import ENV_PERMISSION_CLASS
             OpenApiExample(
                 "Business updated response",
                 summary="Example business update response",
+                description="Response containing the updated business profile data after a successful full update.",
                 value={
                     "user": {"email": "store@example.com"},
                     "cnpj": "12345678000199",
@@ -134,6 +139,7 @@ from user.permissions import ENV_PERMISSION_CLASS
             OpenApiExample(
                 "Partial business update",
                 summary="Example business partial update request",
+                description="Request payload with only the fields to be partially updated (e.g., trade name only).",
                 value={
                     "nome_fantasia": "Novo Nome Fantasia",
                 },
@@ -142,6 +148,7 @@ from user.permissions import ENV_PERMISSION_CLASS
             OpenApiExample(
                 "Business partially updated response",
                 summary="Example business partial update response",
+                description="Response containing the business profile with only the modified fields updated, other fields remain unchanged.",
                 value={
                     "user": {"email": "store@example.com"},
                     "cnpj": "12345678000199",
